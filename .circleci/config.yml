@@ -49,8 +49,6 @@ jobs:
           paths:
             - .git
             - build.sbt
-            - Dockerfile
-            - deploy.sh
             - project
             - data-provider
             - crawler-service
@@ -75,7 +73,7 @@ jobs:
           command: sbt "web-app/assembly"
       - run:
           name: deploy backend
-          command: ./deploy.sh
+          command: ./web-app/deploy.sh
 
   deploy_crawler-backend:
     executor: ci-deploy-executor

@@ -2,12 +2,15 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Config
 BUILDER_NAME="multi-arch-builder"
 IMAGE_NAME="peregin/velocorner.com"
 TAG="latest"
-DOCKERFILE=${1:-"Dockerfile"}
+DOCKERFILE=${1:-"$SCRIPT_DIR/Dockerfile"}
 PLATFORMS=${2:-"linux/arm64"}
+BUILD_CONTEXT=${3:-"$SCRIPT_DIR"}
 
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
@@ -45,6 +48,7 @@ docker buildx build \
     --cache-from "type=registry,ref=$IMAGE_NAME:$TAG" \
     --cache-to "type=inline" \
     --progress=plain \
-    --file "$DOCKERFILE" .
+    --file "$DOCKERFILE" \
+    "$BUILD_CONTEXT"
 
 log INFO "Build and push completed"
