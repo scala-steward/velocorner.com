@@ -23,7 +23,8 @@ object CrawlerApp extends IOApp.Simple {
     // crawler = new CrawlerBikeImport[IO](client)
     // crawler = new CrawlerBikester[IO](client)
     // crawler = new CrawlerAmazon[IO](client)
-    crawler = new CrawlerBike24[IO](client)
+    //crawler = new CrawlerBike24[IO](client)
+    crawler = new CrawlerBikeDiscount[IO](client)
     //crawler = new CrawlerVeloFactory[IO](client)
 
     // elite suito-t trainer

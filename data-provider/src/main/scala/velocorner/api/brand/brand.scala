@@ -31,6 +31,14 @@ package object brand {
         )
 
     // part of crawling
+    object BikeDiscount
+        extends Marketplace(
+          "Bike-Discount",
+          "https://www.bike-discount.de/",
+          "https://www.bike-discount.de/media/43/f2/08/1701961103/bike-discount.svg?ts=1701961103"
+        )
+
+    // part of crawling
     object BikeComponents
         extends Marketplace(
           "Bike-Components",

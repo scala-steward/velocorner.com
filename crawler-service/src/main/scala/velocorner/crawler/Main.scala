@@ -31,7 +31,8 @@ object Main extends IOApp.Simple {
         new CrawlerBikester[IO](client),
         new CrawlerVeloFactory[IO](client),
         // new CrawlerAmazon[IO](client)
-        new CrawlerBike24[IO](client)
+        new CrawlerBike24[IO](client),
+        new CrawlerBikeDiscount[IO](client)
       )
       _ <- info(s"possible marketplaces: ${Marketplace.values.map(_.name).mkString("\n", "\n", "\n")} ...")
       _ <- info(s"using crawlers: ${crawlers.map(_.market().name).mkString("\n", "\n", "\n")} ...")
