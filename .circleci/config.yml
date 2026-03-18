@@ -63,6 +63,11 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
+          name: trust github host key
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+      - run:
           name: generate swagger.json
           command: sbt "web-app/swagger"
       - run:
@@ -83,6 +88,11 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
+          name: trust github host key
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+      - run:
           name: dockerhub login
           command: docker login -u peregin -p $DOCKERHUB_PASSWORD docker.io
       - run:
@@ -97,6 +107,11 @@ jobs:
           at: .
       - setup_remote_docker:
           docker_layer_caching: false
+      - run:
+          name: trust github host key
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
       - run:
           name: dockerhub login
           command: docker login -u peregin -p $DOCKERHUB_PASSWORD docker.io
