@@ -15,6 +15,7 @@ import velocorner.api.brand.{Marketplace, ProductDetails}
 import java.net.URLEncoder
 import scala.jdk.CollectionConverters._
 import scala.util.Try
+import fs2.compression.Compression
 
 object CrawlerAmazon {
 
@@ -68,7 +69,7 @@ object CrawlerAmazon {
   }
 }
 
-class CrawlerAmazon[F[_]: Async](client: Client[F]) extends Crawler[F] with Http4sClientDsl[F] {
+class CrawlerAmazon[F[_]: Async: Compression](client: Client[F]) extends Crawler[F] with Http4sClientDsl[F] {
 
   override def market(): Marketplace = Amazon
 
@@ -76,7 +77,7 @@ class CrawlerAmazon[F[_]: Async](client: Client[F]) extends Crawler[F] with Http
     val search = URLEncoder.encode(searchTerm, "UTF-8")
     val link = s"https://www.amazon.com/s?k=$search&i=sporting-intl-ship&ref=nb_sb_noss"
     val limit = 5
-    val gzClient = GZip()(client)
+    val gzClient = GZip[F]()(client)
     for {
       page <- gzClient.get(Uri.unsafeFromString(link))(_.body.through(text.utf8.decode).compile.string)
     } yield CrawlerAmazon.scrape(page, limit)

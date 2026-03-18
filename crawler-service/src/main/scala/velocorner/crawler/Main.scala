@@ -28,8 +28,8 @@ object Main extends IOApp.Simple {
         // new CrawlerGalaxus[IO](client),
         // new CrawlerChainReactionCycles[IO](client), don't accept orders outside UK anymore
         new CrawlerBikeImport[IO](client),
-        new CrawlerBikester[IO](client)
-        // new CrawlerVeloFactory[IO](client)
+        new CrawlerBikester[IO](client),
+        new CrawlerVeloFactory[IO](client)
         // new CrawlerAmazon[IO](client)
         // new CrawlerBike24[IO](client)
       )

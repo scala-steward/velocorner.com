@@ -3,6 +3,7 @@ package velocorner.crawler
 import cats.effect.{Async, IO}
 import cats.implicits._
 import fs2.text
+import fs2.compression.Compression
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.http4s.circe.CirceEntityCodec.circeEntityDecoder
@@ -93,7 +94,7 @@ object CrawlerBike24 {
   }
 }
 
-class CrawlerBike24[F[_]: Async](client: Client[F]) extends Crawler[F] with Http4sClientDsl[F] {
+class CrawlerBike24[F[_]: Async: Compression](client: Client[F]) extends Crawler[F] with Http4sClientDsl[F] {
 
   implicit def logger: Logger[F] = Slf4jLogger.getLogger[F]
 
@@ -206,7 +207,7 @@ class CrawlerBike24[F[_]: Async](client: Client[F]) extends Crawler[F] with Http
       .withEmptyBody
     // .withHttpVersion(HttpVersion.`HTTP/2`) // .withContentType(`Content-Type`(MediaType.application.`x-www-form-urlencoded`))
     println(request.asCurl(_ => false))
-    val gzipClient = GZip()(client)
+    val gzipClient: Client[F] = GZip[F]()(client)
     for {
       res <- gzipClient.run(request).use { rep =>
         for {
