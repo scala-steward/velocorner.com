@@ -7,16 +7,28 @@ import io.circe.generic.semiauto.deriveCodec
 import org.http4s.circe.CirceEntityCodec.circeEntityDecoder
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
-import org.http4s.{Header, Headers, Method, Uri}
+import org.http4s.headers.Referer
+import org.http4s.{Header, Headers, Method, Request, Status, Uri}
 import org.typelevel.ci.CIString
 import velocorner.api.Money
 import velocorner.api.brand.{Brand, Marketplace, ProductDetails}
 import velocorner.api.brand.Marketplace.VeloFactory
-import velocorner.crawler.CrawlerVeloFactory.SearchResponse
-
-import java.net.URLEncoder
 
 object CrawlerVeloFactory {
+
+  final case class Config(zone: String, hashId: String) {
+    val baseUri: String = s"https://$zone-search.doofinder.com/5/search"
+  }
+
+  object Config {
+    def fromEnv: Option[Config] =
+      sys.env.get("VELOFACTORY_DOOFINDER_HASHID").map { hashId =>
+        Config(
+          zone = sys.env.getOrElse("VELOFACTORY_DOOFINDER_ZONE", "eu1").trim,
+          hashId = hashId.trim
+        )
+      }
+  }
 
   case class VeloFactoryProduct(
       title: String,
@@ -79,30 +91,39 @@ object CrawlerVeloFactory {
       } yield SearchResponse(productsOnly)
     }
   }
+
+  def searchUri(searchTerm: String, limit: Int, config: Config): Uri =
+    Uri
+      .unsafeFromString(config.baseUri)
+      .withQueryParam("hashid", config.hashId)
+      .withQueryParam("page", 1)
+      .withQueryParam("rpp", limit)
+      .withQueryParam("query", searchTerm)
 }
 
-class CrawlerVeloFactory[F[_]: Async](client: Client[F]) extends Crawler[F] with Http4sClientDsl[F] {
+class CrawlerVeloFactory[F[_]: Async](client: Client[F], config: CrawlerVeloFactory.Config) extends Crawler[F] with Http4sClientDsl[F] {
 
   override def market(): Marketplace = VeloFactory
 
   override def products(searchTerm: String, limit: Int): F[List[ProductDetails]] = {
-    val search = URLEncoder.encode(searchTerm, "UTF-8")
     val headers: Headers = Headers(
-      Header.Raw(CIString("authority"), "eu1-search.doofinder.com"),
       Header.Raw(CIString("user-agent"), "Mozilla/5.0"),
-      Header.Raw(CIString("accept"), "*/*"),
+      Header.Raw(CIString("accept"), "application/json"),
       Header.Raw(CIString("origin"), "https://www.velofactory.ch"),
-      Header.Raw(CIString("referer"), "https://www.velofactory.ch"),
-      Header.Raw(
-        CIString("path"),
-        s"/5/search?hashid=54e8e92f3b6055a6b454a8b88d75f76d&query_counter=5&page=1&rpp=30&transformer=&session_id=cf831bcf7ad2d7021bdbb28f61c6fbf0&query=$search"
-      )
+      Referer(Uri.unsafeFromString("https://www.velofactory.ch"))
     )
-    val uri =
-      s"https://eu1-search.doofinder.com/5/search?hashid=54e8e92f3b6055a6b454a8b88d75f76d&query_counter=6&page=1&rpp=30&transformer=&session_id=cf831bcf7ad2d7021bdbb28f61c6fbf0&query=$search"
-    val req = Method.GET(Uri.unsafeFromString(uri), headers)
-    for {
-      res <- client.expect[SearchResponse](req)
-    } yield res.toApi().take(limit)
+    val req = Request[F](Method.GET, CrawlerVeloFactory.searchUri(searchTerm, limit, config), headers = headers)
+    client.run(req).use { res =>
+      res.status match {
+        case Status.Ok =>
+          res.as[CrawlerVeloFactory.SearchResponse].map(_.toApi().take(limit))
+        case _ =>
+          res.bodyText.compile.string.flatMap { body =>
+            Async[F].raiseError(
+              new IllegalStateException(s"VeloFactory search failed with ${res.status.code}: ${body.take(300)}")
+            )
+          }
+      }
+    }
   }
 }
