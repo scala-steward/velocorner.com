@@ -34,7 +34,10 @@ object CrawlerBikeDiscount {
 
   def extractPrice(s: String): Money = {
     val amountCcy = s.split('>').last.trim
-    PriceParser.parse(amountCcy)
+    val normalized = amountCcy
+      .replace(".", "")
+      .replace(",", ".")
+    PriceParser.parse(normalized)
   }
 
   def parseProducts(content: String, limit: Int): List[ProductDetails] =

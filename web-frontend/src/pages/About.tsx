@@ -92,7 +92,7 @@ const About = () => {
                 <Badge colorPalette="green" borderRadius="full" px={3} py={1}>
                   About Velocorner
                 </Badge>
-                <Heading size="2xl" lineHeight="1.05" maxW="14ch">
+                <Heading size="2xl" lineHeight="1.05" maxW="14ch" color='black'>
                   Clearer training insight, less dashboard noise.
                 </Heading>
                 <Text color="slate.600" fontSize="lg" lineHeight="1.8" maxW="3xl">
@@ -101,7 +101,7 @@ const About = () => {
                 </Text>
                 <Text color="slate.600" lineHeight="1.8" maxW="3xl">
                   Activity data is synchronized from{" "}
-                  <Link href="https://www.strava.com" color="brand.700" target="_blank" rel="noopener noreferrer">
+                  <Link href="https://www.strava.com" color="brand.600" fontWeight='bold' target="_blank" rel="noopener noreferrer">
                     Strava
                   </Link>
                   . The platform also exposes an API and spans a deliberately mixed stack across Scala, React, Rust, Kotlin, Go, and search infrastructure.
@@ -135,7 +135,7 @@ const About = () => {
           </Card.Body>
         </Card.Root>
 
-        <Grid templateColumns={{ base: "1fr", lg: "1.15fr 0.85fr" }} gap={6}>
+        <Grid templateColumns={{ base: "1fr", lg: "1.15fr 0.85fr" }} gap={6} color='black'>
           <Card.Root borderRadius="28px" border="1px solid" borderColor="rgba(20, 32, 51, 0.08)" bg="rgba(255,255,255,0.76)" boxShadow="0 24px 60px rgba(18, 38, 63, 0.09)">
             <Card.Body p={{ base: 6, md: 7 }}>
               <VStack align="start" gap={4}>
@@ -158,13 +158,13 @@ const About = () => {
             </Card.Body>
           </Card.Root>
 
-          <Card.Root borderRadius="28px" border="1px solid" borderColor="rgba(20, 32, 51, 0.08)" bg="rgba(255,255,255,0.76)" boxShadow="0 24px 60px rgba(18, 38, 63, 0.09)">
+          <Card.Root color='black' borderRadius="28px" border="1px solid" borderColor="rgba(20, 32, 51, 0.08)" bg="rgba(255,255,255,0.76)" boxShadow="0 24px 60px rgba(18, 38, 63, 0.09)">
             <Card.Body p={{ base: 6, md: 7 }}>
               <VStack align="start" gap={4}>
                 <Heading size="lg">Developer access</Heading>
                 <Text color="slate.600" lineHeight="1.8">
                   The{" "}
-                  <Link href="/docs" color="brand.700">
+                  <Link href="/docs" color="brand.600" fontWeight='bold'>
                     Velocorner API
                   </Link>{" "}
                   follows the OpenAPI standard and is Swagger compatible, making it straightforward to inspect and integrate.
@@ -185,7 +185,7 @@ const About = () => {
         )}
 
         <Card.Root borderRadius="28px" border="1px solid" borderColor="rgba(20, 32, 51, 0.08)" bg="rgba(255,255,255,0.76)" boxShadow="0 24px 60px rgba(18, 38, 63, 0.09)">
-          <Card.Body p={{ base: 6, md: 7 }}>
+          <Card.Body p={{ base: 2, md: 7 }}>
             <VStack align="stretch" gap={5}>
               <HStack justify="space-between" align="start" flexWrap="wrap">
                 <VStack align="start" gap={1}>
@@ -214,7 +214,7 @@ const About = () => {
                 <VStack align="stretch" gap={5}>
                   <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(5, 1fr)" }} gap={3}>
                     {statusItems(status).map((item) => (
-                      <Box key={item.label} p={4} borderRadius="2xl" bg="white" border="1px solid" borderColor="rgba(20, 32, 51, 0.06)">
+                      <Box key={item.label} p={2} borderRadius="2xl" bg="white" border="1px solid" borderColor="rgba(20, 32, 51, 0.06)">
                         <Text fontSize="xs" textTransform="uppercase" letterSpacing="0.1em" color="slate.500" mb={2}>
                           {item.label}
                         </Text>
