@@ -139,11 +139,11 @@ const About = () => {
           <Card.Root borderRadius="28px" border="1px solid" borderColor="rgba(20, 32, 51, 0.08)" bg="rgba(255,255,255,0.76)" boxShadow="0 24px 60px rgba(18, 38, 63, 0.09)">
             <Card.Body p={{ base: 6, md: 7 }}>
               <VStack align="start" gap={4}>
-                <Heading size="lg">Platform snapshot</Heading>
+                <Heading size="lg" color='black'>Platform snapshot</Heading>
                 <Text color="slate.600" lineHeight="1.8">
                   Velocorner is both a product and an engineering playground for production-style services, analytics pipelines, and frontend iteration.
                 </Text>
-                <List.Root gap={2} ps={4}>
+                <List.Root gap={2} ps={4} color='black'>
                   <List.Item><Text as="span" fontWeight="700">web-app:</Text> Scala, Play Framework, ZIO</List.Item>
                   <List.Item><Text as="span" fontWeight="700">web-frontend:</Text> React, Chakra UI</List.Item>
                   <List.Item><Text as="span" fontWeight="700">crawler-service:</Text> Scala, http4s, cats-effect</List.Item>
@@ -185,7 +185,7 @@ const About = () => {
         )}
 
         <Card.Root borderRadius="28px" border="1px solid" borderColor="rgba(20, 32, 51, 0.08)" bg="rgba(255,255,255,0.76)" boxShadow="0 24px 60px rgba(18, 38, 63, 0.09)">
-          <Card.Body p={{ base: 2, md: 7 }}>
+          <Card.Body p={{ base: 1, md: 7 }}>
             <VStack align="stretch" gap={5}>
               <HStack justify="space-between" align="start" flexWrap="wrap">
                 <VStack align="start" gap={1}>
@@ -195,7 +195,7 @@ const About = () => {
                   </Text>
                 </VStack>
                 {status?.hostOsVersion && (
-                  <Badge borderRadius="full" px={3} py={1}>
+                  <Badge borderRadius="full" px={{ base: 1, md: 3 }} py={1}>
                     {status.hostOsVersion}
                   </Badge>
                 )}
@@ -214,7 +214,7 @@ const About = () => {
                 <VStack align="stretch" gap={5}>
                   <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(5, 1fr)" }} gap={3}>
                     {statusItems(status).map((item) => (
-                      <Box key={item.label} p={2} borderRadius="2xl" bg="white" border="1px solid" borderColor="rgba(20, 32, 51, 0.06)">
+                      <Box key={item.label} p={{ base: 1, md: 2 }} borderRadius="2xl" bg="white" border="1px solid" borderColor="rgba(20, 32, 51, 0.06)">
                         <Text fontSize="xs" textTransform="uppercase" letterSpacing="0.1em" color="slate.500" mb={2}>
                           {item.label}
                         </Text>
