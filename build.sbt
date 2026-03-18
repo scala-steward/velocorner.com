@@ -211,17 +211,11 @@ lazy val webApp = (project in file("web-app") withId "web-app")
     BuildInfoKeys.buildInfoKeys := buildInfoKeys(extraKeys =
       Seq(
         "playVersion" -> play.core.PlayVersion.current,
-        "catsVersion" -> Dependencies.catsVersion,
-        "dockerBaseImage" -> DockerBuild.baseImage
+        "catsVersion" -> Dependencies.catsVersion
       )
     ).value,
     buildInfoPackage := "velocorner.build",
     maintainer := DockerBuild.maintainer,
-    Docker / packageName := "velocorner.com",
-    Docker / dockerExposedPorts := Seq(9000),
-    dockerBaseImage := DockerBuild.baseImage,
-    dockerUsername := Some("peregin"),
-    Docker / version := "latest",
     Universal / javaOptions ++= Seq("-Dplay.server.pidfile.path=/dev/null", "-Duser.timezone=UTC"),
     swaggerDomainNameSpaces := Seq("velocorner.api"),
     swaggerPrettyJson := true,

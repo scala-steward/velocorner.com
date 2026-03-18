@@ -136,6 +136,15 @@ const Weather = ({ defaultLocation = '' }) => {
     }
   };
 
+  const formatUnixTime = (timestamp) => {
+    const seconds = Number(timestamp);
+    if (!Number.isFinite(seconds)) return 'n/a';
+    const date = new Date(seconds * 1000);
+    return Number.isNaN(date.getTime())
+      ? 'n/a'
+      : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <Box p={2}>
       <Stack direction={{ base: 'column', sm: 'row' }}>
@@ -175,11 +184,11 @@ const Weather = ({ defaultLocation = '' }) => {
             <HStack textAlign="center" align="center" pt='1rem' gap='2rem' color="slate.900">
               <Flex justify="center" align="center" gap='.5rem'>
                 <LuSun size='1.5rem' color='orange' />
-                <Text fontSize="2xl" color="slate.900">{new Date(currentWeather?.sunriseSunset?.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                <Text fontSize="2xl" color="slate.900">{formatUnixTime(currentWeather?.sunriseSunset?.sunrise)}</Text>
               </Flex>
               <Flex justify="center" align="center" gap='.5rem'>
                 <LuMoonStar size='1.5rem' color='var(--chakra-colors-slate-700)' />
-                <Text fontSize="2xl" color="slate.900">{new Date(currentWeather?.sunriseSunset?.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                <Text fontSize="2xl" color="slate.900">{formatUnixTime(currentWeather?.sunriseSunset?.sunset)}</Text>
               </Flex>
             </HStack>
 
