@@ -28,10 +28,17 @@ class RouterTest extends AsyncFlatSpec with AsyncIOSpec with should.Matchers {
 
   "router" should "handle empty search term" in
     (for {
-      rsp <- new Router[IO](Nil).routes.orNotFound.run(GET(uri"/search/"))
-      res <- rsp.as[String]
+      rsp <- new Router[IO](Nil).routes.orNotFound.run(GET(uri"/search/%20%20"))
+      res <- rsp.bodyText.compile.string
     } yield (rsp, res)).asserting { case (rsp, res) =>
       rsp.status shouldBe Status.BadRequest
       res shouldBe "empty search term"
+    }
+
+  "router" should "serve swagger ui" in
+    (for {
+      rsp <- new Router[IO](Nil).routes.orNotFound.run(GET(uri"/docs"))
+    } yield rsp).asserting { rsp =>
+      rsp.status shouldBe Status.PermanentRedirect
     }
 }

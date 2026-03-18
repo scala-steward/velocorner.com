@@ -92,6 +92,12 @@ def http4s: Seq[ModuleID] = Seq(
   "org.http4s" %% "http4s-dsl"
 ).map(_ % Dependencies.http4s)
 
+def tapir: Seq[ModuleID] = Seq(
+  "com.softwaremill.sttp.tapir" %% "tapir-http4s-server",
+  "com.softwaremill.sttp.tapir" %% "tapir-json-circe",
+  "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle"
+).map(_ % Dependencies.tapirVersion)
+
 def circe: Seq[ModuleID] = Seq(
   "io.circe" %% "circe-core",
   "io.circe" %% "circe-parser",
@@ -161,7 +167,7 @@ lazy val crawlerService = (project in file("crawler-service") withId "crawler-se
     buildSettings,
     name := "crawler-service",
     description := "product crawler with an up-to-date data feed",
-    libraryDependencies ++= catsEffect ++ http4s ++ circe ++ scalacache ++ Seq(
+    libraryDependencies ++= catsEffect ++ http4s ++ tapir ++ circe ++ scalacache ++ Seq(
       "org.typelevel" %% "log4cats-slf4j" % "2.8.0",
       "org.jsoup" % "jsoup" % Dependencies.jsoupVersion
     ) ++ catsEffectTest.map(_ % Test),
