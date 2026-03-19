@@ -25,9 +25,3 @@ object Dependencies {
   val mockitoVersion = "5.23.0"
   val catsEffectTestVersion = "1.8.0"
 }
-
-object DockerBuild {
-
-  val baseImage = "openjdk:17-slim-buster"
-  val maintainer = "velocorner.com@gmail.com"
-}

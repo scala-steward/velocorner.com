@@ -35,6 +35,7 @@ sbt web-app/assembly
 ```shell script
 web-app/deploy.sh
 docker run --env-file local.env -e DB_URL=jdbc:postgresql://host.docker.internal:5492/velocorner -p 9000:9000 peregin/velocorner.com:latest
+docker run -p 9011:9011 peregin/velocorner.crawler:latest
 ```
 
 ## Images

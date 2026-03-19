@@ -23,7 +23,11 @@ try {
   browser = await chromium.launch({
     executablePath,
     headless: true,
-    args: ["--disable-blink-features=AutomationControlled"]
+    args: [
+      "--disable-blink-features=AutomationControlled",
+      "--disable-dev-shm-usage",
+      "--no-sandbox"
+    ]
   });
 
   const context = await browser.newContext({

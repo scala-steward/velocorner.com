@@ -173,12 +173,26 @@ lazy val crawlerService = (project in file("crawler-service") withId "crawler-se
     ) ++ catsEffectTest.map(_ % Test),
     BuildInfoKeys.buildInfoKeys := buildInfoKeys().value,
     buildInfoPackage := "velocorner.crawler.build",
-    maintainer := DockerBuild.maintainer,
-    Docker / packageName := "velocorner.crawler",
-    Docker / dockerExposedPorts := Seq(9011),
-    dockerBaseImage := DockerBuild.baseImage,
-    dockerUsername := Some("peregin"),
-    Docker / version := "latest",
+    assembly / test := {},
+    assembly / assemblyJarName := "crawler-service-all.jar",
+    assembly / mainClass := Some("velocorner.crawler.Main"),
+    assembly / assemblyMergeStrategy := {
+      case PathList("reference.conf") =>
+        MergeStrategy.concat
+      case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
+        MergeStrategy.first
+      case PathList("META-INF", "FastDoubleParser-LICENSE") =>
+        MergeStrategy.discard
+      case manifest if manifest.contains("MANIFEST.MF") =>
+        MergeStrategy.discard
+      case PathList("META-INF", "versions", "9", "module-info.class") =>
+        MergeStrategy.discard
+      case "module-info.class" =>
+        MergeStrategy.discard
+      case x =>
+        val oldStrategy = (assembly / assemblyMergeStrategy).value
+        oldStrategy(x)
+    },
     // implicit0, withFilter, final map
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
   )
@@ -221,7 +235,6 @@ lazy val webApp = (project in file("web-app") withId "web-app")
       )
     ).value,
     buildInfoPackage := "velocorner.build",
-    maintainer := DockerBuild.maintainer,
     Universal / javaOptions ++= Seq("-Dplay.server.pidfile.path=/dev/null", "-Duser.timezone=UTC"),
     swaggerDomainNameSpaces := Seq("velocorner.api"),
     swaggerPrettyJson := true,
