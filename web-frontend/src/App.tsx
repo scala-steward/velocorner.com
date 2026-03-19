@@ -20,8 +20,9 @@ import './App.css'
 import Health from './pages/Health.js';
 import Footer from './components/Footer.js';
 
+// connected to velocorner.com domain
 ReactGA.initialize([
-  { trackingId: 'G-1GNXX7WZHH' }
+  { trackingId: 'G-LKV8LYV34F' }
 ]);
 
 const Layout = ({ children }: { children: ReactNode }) => {
