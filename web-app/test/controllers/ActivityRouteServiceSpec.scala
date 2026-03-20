@@ -71,8 +71,7 @@ class ActivityRouteServiceSpec extends AnyWordSpec with Matchers with MockitoSug
         points = List(
           ActivityRoutePoint(47.3, 8.5, Some(500d), Some(0)),
           ActivityRoutePoint(47.4, 8.6, Some(510d), Some(42))
-        ),
-        hasElevation = true
+        )
       )
 
       when(connectivity.getStorage).thenReturn(storage)
@@ -108,7 +107,6 @@ class ActivityRouteServiceSpec extends AnyWordSpec with Matchers with MockitoSug
       val route = await(service.routeFor(account, 244993130L)).get
 
       route.source mustBe "streams"
-      route.hasElevation mustBe true
       route.points must have size 2
       route.points.head.ts mustBe Some(0)
       verify(storage).storeActivityRoute(

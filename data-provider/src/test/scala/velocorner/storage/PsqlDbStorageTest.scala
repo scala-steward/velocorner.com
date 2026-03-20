@@ -78,8 +78,7 @@ class PsqlDbStorageTest
     val route = ActivityRoute(
       activityId = 244993130L,
       source = "streams",
-      points = List(ActivityRoutePoint(47.31, 8.52, Some(510d), Some(12))),
-      hasElevation = true
+      points = List(ActivityRoutePoint(47.31, 8.52, Some(510d), Some(12)))
     )
 
     awaitOn(psqlStorage.storeActivityRoute(route, 432909L))
