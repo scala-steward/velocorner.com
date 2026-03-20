@@ -18,23 +18,23 @@ import ApiClient from "@/service/ApiClient";
 import type { AthleteUnits } from "@/types/athlete";
 import { dashboardCardProps } from "./shared";
 
+const LeafletMapContainer = MapContainer as any;
+const LeafletTileLayer = TileLayer as any;
+const LeafletPolyline = Polyline as any;
+const LeafletCircleMarker = CircleMarker as any;
+
 type LastActivity = {
   id: number;
   name: string;
   distance?: number;
   total_elevation_gain?: number;
-  moving_time?: number;
-  elapsed_time?: number;
   start_date_local?: string;
-  start_latitude?: number;
-  start_longitude?: number;
 };
 
 type ActivityRoutePoint = {
   lat: number;
   lon: number;
   ele?: number;
-  ts?: number;
 };
 
 type ActivityRoute = {
@@ -198,7 +198,7 @@ const ElevationProfile = ({
     >
       <HStack justify="space-between" align="start" gap={3} mb={3} flexWrap="wrap">
         <Box>
-          <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="black" fontWeight="bold">
+          <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="gray.900" fontWeight="bold">
             Elevation Profile
           </Text>
         </Box>
@@ -418,23 +418,26 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
               <Box
                 position="absolute"
                 inset={0}
-                sx={{
-                  ".leaflet-container": {
-                    height: "100%",
-                    width: "100%",
-                    background: "#d9e7ef",
-                    fontFamily: "inherit",
-                  },
-                  ".leaflet-control-attribution": {
-                    background: "rgba(255,255,255,0.78)",
-                    fontSize: "10px",
-                  },
-                  ".leaflet-pane.leaflet-tile-pane": {
-                    filter: "saturate(0.95) contrast(1.02)",
-                  },
-                }}
               >
-                <MapContainer
+                <style>
+                  {`
+                    .last-activity-map .leaflet-container {
+                      height: 100%;
+                      width: 100%;
+                      background: #d9e7ef;
+                      font-family: inherit;
+                    }
+                    .last-activity-map .leaflet-control-attribution {
+                      background: rgba(255,255,255,0.78);
+                      font-size: 10px;
+                    }
+                    .last-activity-map .leaflet-pane.leaflet-tile-pane {
+                      filter: saturate(0.95) contrast(1.02);
+                    }
+                  `}
+                </style>
+                <LeafletMapContainer
+                  className="last-activity-map"
                   center={positions[Math.floor(positions.length / 2)]}
                   zoom={13}
                   scrollWheelZoom={false}
@@ -447,12 +450,12 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
                   attributionControl
                   style={{ height: "100%", width: "100%" }}
                 >
-                  <TileLayer
+                  <LeafletTileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   <RouteBounds positions={positions} />
-                  <Polyline
+                  <LeafletPolyline
                     positions={positions}
                     pathOptions={{
                       color: "#ffffff",
@@ -462,7 +465,7 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
                       lineJoin: "round",
                     }}
                   />
-                  <Polyline
+                  <LeafletPolyline
                     positions={positions}
                     pathOptions={{
                       color: "#e53e3e",
@@ -473,20 +476,20 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
                     }}
                   />
                   {startPoint && (
-                    <CircleMarker
+                    <LeafletCircleMarker
                       center={startPoint}
                       radius={7}
                       pathOptions={{ color: "#1f9d55", fillColor: "#ffffff", fillOpacity: 1, weight: 4 }}
                     />
                   )}
                   {endPoint && (
-                    <CircleMarker
+                    <LeafletCircleMarker
                       center={endPoint}
                       radius={8}
                       pathOptions={{ color: "#ffffff", fillColor: "#e53e3e", fillOpacity: 1, weight: 4 }}
                     />
                   )}
-                </MapContainer>
+                </LeafletMapContainer>
               </Box>
             ) : null}
 
@@ -554,7 +557,6 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
                         {formatElevation(activity.total_elevation_gain, units)}
                       </Text>
                     </Box>
-
                   </Grid>
                 </>
               ) : (
