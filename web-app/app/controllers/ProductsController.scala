@@ -1,23 +1,25 @@
 package controllers
 
 import controllers.util.WebMetrics
+import play.api.{Environment, Mode}
 import play.api.libs.json.{JsArray, JsString, Json}
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Request}
 import squants.market.USD
-import velocorner.feed.{ExchangeRatesFeed, ProductCrawlerFeed, ProductFeed, RatesFeed}
-import velocorner.util.JsonIo
+import velocorner.feed.{ExchangeRatesFeed, ProductCrawlerFeed, ProductFeed, RatesFeed, WeatherFeed, WeatherLocationFeed}
+import velocorner.util.{CountryUtils, JsonIo}
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.math.BigDecimal.RoundingMode
 
-class ProductsController @Inject() (val connectivity: ConnectivitySettings, components: ControllerComponents)
+class ProductsController @Inject() (val connectivity: ConnectivitySettings, environment: Environment, components: ControllerComponents)
     extends AbstractController(components)
     with WebMetrics {
 
   private val productFeed: ProductFeed = new ProductCrawlerFeed(connectivity.secretConfig)
   private val ratesFeed: RatesFeed = new ExchangeRatesFeed(connectivity.secretConfig)
+  private val weatherFeed: WeatherFeed = new WeatherLocationFeed(connectivity.secretConfig)
 
   // wip - from elastic or live from marketplaces
   // route mapped to /api/products/suggest
@@ -36,9 +38,10 @@ class ProductsController @Inject() (val connectivity: ConnectivitySettings, comp
           for {
             products <- productFeed.search(query.trim)
             // detect country of ip, use weather service -> location/ip endpoint
-            countryCode2 = "US"
+            ip = detectIp(request, environment)
+            countryCode2 <- weatherFeed.countryLocation(ip)
             // detect currency of the country
-            detectedCcy = "USD" // CountryUtils.code2Currency.getOrElse(countryCode2, "USD")
+            detectedCcy = CountryUtils.code2Currency.getOrElse(countryCode2, "USD")
             baseCcy = ExchangeRatesFeed.supported.getOrElse(detectedCcy, USD)
             mc <- ratesFeed.moneyContext()
             // convert prices into the base currency
@@ -58,4 +61,14 @@ class ProductsController @Inject() (val connectivity: ConnectivitySettings, comp
         products <- productFeed.supported()
       } yield Ok(JsonIo.write(products))
     }
+
+  def detectIp(request: Request[AnyContent], environment: Environment): String = {
+    val remoteAddress = request.headers.get("X-Forwarded-For").getOrElse(request.remoteAddress) match {
+      case "0:0:0:0:0:0:0:1" if environment.mode == Mode.Dev => "85.1.45.35"
+      case "0:0:0:0:0:0:0:1"                                 => "127.0.0.1"
+      case other                                             => other
+    }
+    logger.debug(s"remote address is $remoteAddress")
+    remoteAddress
+  }
 }
