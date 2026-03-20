@@ -15,7 +15,7 @@ import org.flywaydb.core.Flyway
 import org.joda.time.DateTime
 import org.postgresql.util.PGobject
 import play.api.libs.json.{Reads, Writes}
-import velocorner.api.{Account, Achievement, AthletePerformanceAnalysis}
+import velocorner.api.{Account, Achievement, AthletePerformanceAnalysis, ActivityRoute}
 import velocorner.api.strava.Activity
 import velocorner.model.strava.Gear
 import velocorner.util.JsonIo
@@ -64,6 +64,7 @@ class PsqlDbStorage(dbUrl: String, dbUser: String, dbPassword: String, flywayLoc
     }
 
   private implicit val activityMeta: Meta[Activity] = playJsonMeta[Activity]
+  private implicit val activityRouteMeta: Meta[ActivityRoute] = playJsonMeta[ActivityRoute]
   private implicit val accountMeta: Meta[Account] = playJsonMeta[Account]
   private implicit val gearMeta: Meta[Gear] = playJsonMeta[Gear]
   // doobie/joda/ts
@@ -187,6 +188,18 @@ class PsqlDbStorage(dbUrl: String, dbUser: String, dbPassword: String, flywayLoc
   override def getActivity(id: Long): Future[Option[Activity]] =
     sql"""select data from activity where id = $id
          |""".stripMargin.query[Activity].option.transactToFuture
+
+  override def getActivityRoute(activityId: Long, athleteId: Long): Future[Option[ActivityRoute]] =
+    sql"""select data from activity_route
+         |where activity_id = $activityId and athlete_id = $athleteId
+         |""".stripMargin.query[ActivityRoute].option.transactToFuture
+
+  override def storeActivityRoute(route: ActivityRoute, athleteId: Long): Future[Unit] =
+    sql"""insert into activity_route (activity_id, athlete_id, source, updated_at, data)
+         |values(${route.activityId}, $athleteId, ${route.source}, ${DateTime.now()}, $route)
+         |on conflict(activity_id)
+         |do update set athlete_id = $athleteId, source = ${route.source}, updated_at = ${DateTime.now()}, data = $route
+         |""".stripMargin.update.run.void.transactToFuture
 
   override def getAccountStorage: AccountStorage[Future] = accountStorage
 

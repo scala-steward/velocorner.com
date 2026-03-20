@@ -12,6 +12,7 @@ import HomeDemoDashboard from "@/components/home/DemoDashboard";
 import ActivityTypeSelector from "@/components/home/ActivityTypeSelector";
 import ProfileOverview, { type SearchSuggestion } from "@/components/home/ProfileOverview";
 import AnalyticsSection from "@/components/home/AnalyticsSection";
+import LastActivityRoute3D from "@/components/home/LastActivityRoute3D";
 import WindyMap from "@/components/home/WindyMap";
 import { dashboardCardProps } from "@/components/home/shared";
 
@@ -246,6 +247,8 @@ const Home = () => {
               onSearch={handleSearch}
               onSearchKeyPress={handleSearchKeyPress}
             />
+
+            <LastActivityRoute3D units={profileUnits} />
 
             <AnalyticsSection
               selectedActivityType={selectedActivityType}

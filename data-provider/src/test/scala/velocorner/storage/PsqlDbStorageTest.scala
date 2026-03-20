@@ -6,6 +6,7 @@ import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
+import velocorner.api.{ActivityRoute, ActivityRoutePoint}
 import velocorner.api.strava.Activity
 import velocorner.model.ActionType
 import velocorner.model.strava.Gear
@@ -71,6 +72,19 @@ class PsqlDbStorageTest
 
   it should "list last activity" in {
     awaitOn(psqlStorage.getLastActivity(432909)) mustBe Some(activityFixtures.head)
+  }
+
+  it should "store and retrieve cached activity routes" in {
+    val route = ActivityRoute(
+      activityId = 244993130L,
+      source = "streams",
+      points = List(ActivityRoutePoint(47.31, 8.52, Some(510d), Some(12))),
+      hasElevation = true
+    )
+
+    awaitOn(psqlStorage.storeActivityRoute(route, 432909L))
+    awaitOn(psqlStorage.getActivityRoute(244993130L, 432909L)) mustBe Some(route)
+    awaitOn(psqlStorage.getActivityRoute(244993130L, 1L)) mustBe empty
   }
 
   "account storage" should behave like accountFragments(psqlStorage)

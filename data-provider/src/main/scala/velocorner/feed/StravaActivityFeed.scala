@@ -62,7 +62,24 @@ class StravaActivityFeed(maybeToken: Option[String], override val config: Secret
       .get()
   } yield extractActivities(response)
 
+  override def exportRouteGpx(id: Long): Future[String] = for {
+    response <- ws(_.url(s"${StravaActivityFeed.baseUrl}/activities/$id/streams").withHttpHeaders(("Authorization", authHeader)))
+      .withQueryStringParameters(
+        ("keys", "latlng,time,altitude"),
+        ("key_by_type", "true")
+      )
+      .get()
+  } yield {
+    ensureSuccessful(response)
+    response.body
+  }
+
   private def extractActivities(response: StandaloneWSResponse): List[Activity] = JsonIo.read[List[Activity]](response.body)
+
+  private def ensureSuccessful(response: StandaloneWSResponse): Unit =
+    if (response.status < 200 || response.status >= 300) {
+      throw new IllegalStateException(s"Strava request failed with ${response.status}: ${response.statusText}")
+    }
 
   // athlete
   override def getAthlete: Future[Athlete] = for {

@@ -129,7 +129,8 @@ lazy val buildSettings = Defaults.coreDefaultSettings ++ Seq(
     "org.scala-lang.modules" %% "scala-java8-compat" % VersionScheme.Always
   ),
   libraryDependencies ++= Seq(
-    "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2"
+    "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.2",
+    "org.scala-lang.modules" %% "scala-xml" % "2.4.0"
   ),
   dependencyOverrides ++= Seq(
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.4.0"

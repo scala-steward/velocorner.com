@@ -2,9 +2,9 @@ package velocorner.storage
 
 import com.typesafe.scalalogging.LazyLogging
 import velocorner.SecretConfig
+import velocorner.api.{Account, Achievement, AthletePerformanceAnalysis, ActivityRoute}
 import velocorner.model._
 import velocorner.model.strava.Gear
-import velocorner.api.{Account, Achievement, AthletePerformanceAnalysis}
 
 import scala.concurrent.Future
 import org.joda.time.DateTime
@@ -62,6 +62,8 @@ trait Storage[M[_]] {
   def listTopActivities(athleteId: Long, actionType: ActionType.Entry, activityType: String, limit: Int): M[Iterable[Activity]]
   def getLastActivity(athleteId: Long): M[Option[Activity]]
   def getActivity(id: Long): M[Option[Activity]]
+  def getActivityRoute(activityId: Long, athleteId: Long): M[Option[ActivityRoute]]
+  def storeActivityRoute(route: ActivityRoute, athleteId: Long): M[Unit]
 
   // search and analytics
   def suggestActivities(snippet: String, athleteId: Long, max: Int): M[Iterable[Activity]]

@@ -1,5 +1,7 @@
 
 
+select * from activity_route ar ;
+
 SELECT * FROM athlete_performance_analysis apa;
 
 --delete FROM athlete_performance_analysis apa;

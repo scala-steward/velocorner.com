@@ -382,6 +382,22 @@ GET     /api/activities/:activity/years                    controllers.ActivityC
 GET     /api/activities/last                               controllers.ActivityController.last()
 
 ###
+#  summary: Retrieves cached or live route geometry for an activity
+#  tags:
+#    - activity
+#  responses:
+#    200:
+#      description: Returns normalized route geometry for the given activity
+#    403:
+#      description: Forbidden
+#    404:
+#      description: Not found
+#    500:
+#      description: Internal error
+###
+GET     /api/activities/:id/route                          controllers.ActivityController.route(id: Long)
+
+###
 #  summary: Retrieves the latest activities from the external feed, like Strava
 #  tags:
 #    - activity

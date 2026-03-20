@@ -10,6 +10,7 @@ import play.api.cache.SyncCacheApi
 import play.api.libs.json.Json
 import play.api.mvc._
 import velocorner.api.chart.DailyPoint
+import velocorner.api.ActivityRoute
 import velocorner.api.strava.Activity
 import velocorner.api.wordcloud.WordCloud
 import velocorner.api.{Account, Achievements, AthletePerformance, ProfileStatistics, Progress, Units}
@@ -24,6 +25,7 @@ class ActivityController @Inject() (
     val connectivity: ConnectivitySettings,
     val cache: SyncCacheApi,
     strategy: RefreshStrategy,
+    activityRouteService: ActivityRouteService,
     athletePerformanceService: AthletePerformanceService,
     components: ControllerComponents
 ) extends AbstractController(components)
@@ -245,6 +247,21 @@ class ActivityController @Inject() (
 
       resultET
         .map(JsonIo.write(_))
+        .map(Ok(_))
+        .merge
+    }
+
+  // retrieves the route geometry with backend cache and Strava fallback
+  // route mapped to /api/activities/:id/route
+  def route(id: Long): Action[AnyContent] =
+    TimedAuthAsyncAction(s"query for activity route $id")(parse.default) { implicit request =>
+      val resultET = for {
+        account <- EitherT[Future, Status, Account](Future(loggedIn.toRight(Forbidden)))
+        route <- EitherT[Future, Status, ActivityRoute](activityRouteService.routeFor(account, id).map(_.toRight(NotFound)))
+      } yield route
+
+      resultET
+        .map(Json.toJson(_))
         .map(Ok(_))
         .merge
     }

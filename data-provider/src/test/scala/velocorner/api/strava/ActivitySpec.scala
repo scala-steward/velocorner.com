@@ -48,5 +48,6 @@ class ActivitySpec extends AnyWordSpec with Matchers {
       activity.getStartDateLocal().getYear === 2014
       activity.getStartDateLocal().getHourOfDay === 13
     }
+
   }
 }

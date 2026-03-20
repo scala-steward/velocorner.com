@@ -19,6 +19,7 @@ class ActivityControllerSpec extends PlaySpec with StubControllerComponentsFacto
 
     implicit val timeout: Timeout = new Timeout(10 seconds)
     val refreshStrategyMock = mock[RefreshStrategy]
+    val activityRouteServiceMock = mock[ActivityRouteService]
     val athletePerformanceServiceMock = mock[AthletePerformanceService]
     val settingsMock = mock[ConnectivitySettings]
     val cacheApiMock = mock[SyncCacheApi]
@@ -32,6 +33,7 @@ class ActivityControllerSpec extends PlaySpec with StubControllerComponentsFacto
         settingsMock,
         cacheApiMock,
         refreshStrategyMock,
+        activityRouteServiceMock,
         athletePerformanceServiceMock,
         stubControllerComponents()
       )
@@ -44,6 +46,7 @@ class ActivityControllerSpec extends PlaySpec with StubControllerComponentsFacto
         settingsMock,
         cacheApiMock,
         refreshStrategyMock,
+        activityRouteServiceMock,
         athletePerformanceServiceMock,
         stubControllerComponents()
       )
