@@ -1,6 +1,6 @@
 
 
-select * from activity_route ar ;
+select * from activity_route ar;
 
 SELECT * FROM athlete_performance_analysis apa;
 
