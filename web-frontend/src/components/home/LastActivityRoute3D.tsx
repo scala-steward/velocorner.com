@@ -11,6 +11,8 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { MapContainer, TileLayer, Polyline, CircleMarker, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import { LuExternalLink, LuMapPinned, LuMountain, LuRoute, LuTimer } from "react-icons/lu";
 import ApiClient from "@/service/ApiClient";
 import type { AthleteUnits } from "@/types/athlete";
@@ -40,32 +42,6 @@ type ActivityRoute = {
   source: "gpx" | "polyline" | "streams";
   points: ActivityRoutePoint[];
 };
-
-type Tile = {
-  key: string;
-  x: number;
-  y: number;
-  left: number;
-  top: number;
-  url: string;
-};
-
-type MapPoint = {
-  x: number;
-  y: number;
-};
-
-type MapProjection = {
-  points: MapPoint[];
-  tiles: Tile[];
-};
-
-const TILE_SIZE = 256;
-const MAP_WIDTH = 960;
-const MAP_HEIGHT = 640;
-const MAP_PADDING = 72;
-const MIN_ZOOM = 8;
-const MAX_ZOOM = 15;
 
 const formatDistance = (distanceMeters?: number, units?: AthleteUnits) => {
   const value = distanceMeters ?? 0;
@@ -111,87 +87,16 @@ const formatDate = (dateValue?: string) => {
   }).format(date);
 };
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const RouteBounds = ({ positions }: { positions: [number, number][] }) => {
+  const map = useMap();
 
-const lonToTileX = (lon: number, zoom: number) => ((lon + 180) / 360) * 2 ** zoom;
+  useEffect(() => {
+    if (positions.length < 2) return;
+    map.fitBounds(positions, { padding: [32, 32] });
+  }, [map, positions]);
 
-const latToTileY = (lat: number, zoom: number) => {
-  const safeLat = clamp(lat, -85.05112878, 85.05112878);
-  const radians = (safeLat * Math.PI) / 180;
-  return ((1 - Math.log(Math.tan(radians) + 1 / Math.cos(radians)) / Math.PI) / 2) * 2 ** zoom;
+  return null;
 };
-
-const fitZoom = (route: ActivityRoutePoint[]) => {
-  const lons = route.map((point) => point.lon);
-  const lats = route.map((point) => point.lat);
-  const minLon = Math.min(...lons);
-  const maxLon = Math.max(...lons);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-
-  for (let zoom = MAX_ZOOM; zoom >= MIN_ZOOM; zoom -= 1) {
-    const width = (lonToTileX(maxLon, zoom) - lonToTileX(minLon, zoom)) * TILE_SIZE;
-    const height = (latToTileY(minLat, zoom) - latToTileY(maxLat, zoom)) * TILE_SIZE;
-    if (width <= MAP_WIDTH - MAP_PADDING * 2 && height <= MAP_HEIGHT - MAP_PADDING * 2) {
-      return zoom;
-    }
-  }
-
-  return MIN_ZOOM;
-};
-
-const projectRoute = (route: ActivityRoutePoint[]): MapProjection | null => {
-  if (route.length < 2) return null;
-
-  const zoom = fitZoom(route);
-  const projected = route.map((point) => ({
-    point,
-    tileX: lonToTileX(point.lon, zoom),
-    tileY: latToTileY(point.lat, zoom),
-  }));
-
-  const minTileX = Math.min(...projected.map((entry) => entry.tileX));
-  const maxTileX = Math.max(...projected.map((entry) => entry.tileX));
-  const minTileY = Math.min(...projected.map((entry) => entry.tileY));
-  const maxTileY = Math.max(...projected.map((entry) => entry.tileY));
-
-  const routePixelWidth = Math.max((maxTileX - minTileX) * TILE_SIZE, 1);
-  const routePixelHeight = Math.max((maxTileY - minTileY) * TILE_SIZE, 1);
-  const offsetX = (MAP_WIDTH - routePixelWidth) / 2 - minTileX * TILE_SIZE;
-  const offsetY = (MAP_HEIGHT - routePixelHeight) / 2 - minTileY * TILE_SIZE;
-
-  const points = projected.map(({ tileX, tileY }) => ({
-    x: tileX * TILE_SIZE + offsetX,
-    y: tileY * TILE_SIZE + offsetY,
-  }));
-
-  const tileMinX = Math.floor(Math.min(...points.map((point) => point.x)) / TILE_SIZE) - 1;
-  const tileMaxX = Math.floor(Math.max(...points.map((point) => point.x)) / TILE_SIZE) + 1;
-  const tileMinY = Math.floor(Math.min(...points.map((point) => point.y)) / TILE_SIZE) - 1;
-  const tileMaxY = Math.floor(Math.max(...points.map((point) => point.y)) / TILE_SIZE) + 1;
-  const worldTiles = 2 ** zoom;
-  const tiles: Tile[] = [];
-
-  for (let tileScreenX = tileMinX; tileScreenX <= tileMaxX; tileScreenX += 1) {
-    for (let tileScreenY = tileMinY; tileScreenY <= tileMaxY; tileScreenY += 1) {
-      const x = ((tileScreenX % worldTiles) + worldTiles) % worldTiles;
-      const y = clamp(tileScreenY, 0, worldTiles - 1);
-      tiles.push({
-        key: `${zoom}-${x}-${y}-${tileScreenX}-${tileScreenY}`,
-        x,
-        y,
-        left: tileScreenX * TILE_SIZE,
-        top: tileScreenY * TILE_SIZE,
-        url: `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`,
-      });
-    }
-  }
-
-  return { points, tiles };
-};
-
-const toPath = (points: MapPoint[]) =>
-  points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" ");
 
 interface LastActivityRoute3DProps {
   units: AthleteUnits;
@@ -249,17 +154,14 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
     };
   }, []);
 
-  const projection = useMemo(() => {
-    if (!route?.points?.length) return null;
-    return projectRoute(route.points);
+  const positions = useMemo<[number, number][]>(() => {
+    if (!route?.points?.length) return [];
+    return route.points.map((point) => [point.lat, point.lon]);
   }, [route]);
 
-  const routePoints = projection?.points ?? [];
-  const mapTiles = projection?.tiles ?? [];
-  const hasRoute = routePoints.length > 1;
-  const path = hasRoute ? toPath(routePoints) : "";
-  const startPoint = hasRoute ? routePoints[0] : null;
-  const endPoint = hasRoute ? routePoints[routePoints.length - 1] : null;
+  const hasRoute = positions.length > 1;
+  const startPoint = hasRoute ? positions[0] : null;
+  const endPoint = hasRoute ? positions[positions.length - 1] : null;
 
   return (
     <Card.Root {...dashboardCardProps} overflow="hidden">
@@ -272,59 +174,81 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
             overflow="hidden"
             bg="#d9e7ef"
           >
-            <Box
-              position="absolute"
-              inset={0}
-              bg="linear-gradient(180deg, rgba(7,17,29,0.04), rgba(7,17,29,0.16))"
-              zIndex={1}
-              pointerEvents="none"
-            />
-
-            <Box position="absolute" inset={0} p={{ base: 4, md: 5 }} zIndex={2}>
-              <svg viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">
-                <defs>
-                  <linearGradient id="routeGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#1f9d55" />
-                    <stop offset="50%" stopColor="#ecc94b" />
-                    <stop offset="100%" stopColor="#e53e3e" />
-                  </linearGradient>
-                </defs>
-
-                {hasRoute && (
-                  <>
-                    {mapTiles.map((tile) => (
-                      <image
-                        key={tile.key}
-                        href={tile.url}
-                        x={tile.left}
-                        y={tile.top}
-                        width={TILE_SIZE}
-                        height={TILE_SIZE}
-                        preserveAspectRatio="none"
-                      />
-                    ))}
-
-                    <path d={path} fill="none" stroke="rgba(8, 15, 26, 0.35)" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d={path} fill="none" stroke="rgba(255,255,255,0.68)" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d={path} fill="none" stroke="url(#routeGlow)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-
-                    {startPoint && (
-                      <>
-                        <circle cx={startPoint.x} cy={startPoint.y} r="15" fill="rgba(255,255,255,0.55)" />
-                        <circle cx={startPoint.x} cy={startPoint.y} r="8" fill="#ffffff" stroke="#1f9d55" strokeWidth="4" />
-                      </>
-                    )}
-
-                    {endPoint && (
-                      <>
-                        <circle cx={endPoint.x} cy={endPoint.y} r="18" fill="rgba(255,255,255,0.48)" />
-                        <circle cx={endPoint.x} cy={endPoint.y} r="9" fill="#e53e3e" stroke="#ffffff" strokeWidth="4" />
-                      </>
-                    )}
-                  </>
-                )}
-              </svg>
-            </Box>
+            {hasRoute ? (
+              <Box
+                position="absolute"
+                inset={0}
+                sx={{
+                  ".leaflet-container": {
+                    height: "100%",
+                    width: "100%",
+                    background: "#d9e7ef",
+                    fontFamily: "inherit",
+                  },
+                  ".leaflet-control-attribution": {
+                    background: "rgba(255,255,255,0.78)",
+                    fontSize: "10px",
+                  },
+                  ".leaflet-pane.leaflet-tile-pane": {
+                    filter: "saturate(0.95) contrast(1.02)",
+                  },
+                }}
+              >
+                <MapContainer
+                  center={positions[Math.floor(positions.length / 2)]}
+                  zoom={13}
+                  scrollWheelZoom={false}
+                  dragging={false}
+                  doubleClickZoom={false}
+                  touchZoom={false}
+                  boxZoom={false}
+                  keyboard={false}
+                  zoomControl={false}
+                  attributionControl
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <RouteBounds positions={positions} />
+                  <Polyline
+                    positions={positions}
+                    pathOptions={{
+                      color: "#ffffff",
+                      weight: 10,
+                      opacity: 0.7,
+                      lineCap: "round",
+                      lineJoin: "round",
+                    }}
+                  />
+                  <Polyline
+                    positions={positions}
+                    pathOptions={{
+                      color: "#e53e3e",
+                      weight: 5,
+                      opacity: 0.95,
+                      lineCap: "round",
+                      lineJoin: "round",
+                    }}
+                  />
+                  {startPoint && (
+                    <CircleMarker
+                      center={startPoint}
+                      radius={7}
+                      pathOptions={{ color: "#1f9d55", fillColor: "#ffffff", fillOpacity: 1, weight: 4 }}
+                    />
+                  )}
+                  {endPoint && (
+                    <CircleMarker
+                      center={endPoint}
+                      radius={8}
+                      pathOptions={{ color: "#ffffff", fillColor: "#e53e3e", fillOpacity: 1, weight: 4 }}
+                    />
+                  )}
+                </MapContainer>
+              </Box>
+            ) : null}
 
             <VStack position="absolute" top={{ base: 4, md: 5 }} left={{ base: 4, md: 5 }} align="start" gap={2} zIndex={3}>
               <Badge colorPalette={hasRoute ? "green" : "orange"} borderRadius="full" px={3} py={1}>
