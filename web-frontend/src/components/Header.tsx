@@ -17,7 +17,8 @@ const Header = ({ isMenuOpen, setIsMenuOpen }: HeaderProps) => {
   const isAdmin = isAthleteAdmin(athleteProfile);
   const links = [
     { href: "/#stats", label: "Stats" },
-    ...(isAuthenticated ? [{ href: "/search", label: "Search" }] : []),
+    { href: "/product-search", label: "Product Search" },
+    ...(isAuthenticated ? [{ href: "/search", label: "Activity Search" }] : []),
     { href: "/about", label: "About" },
   ];
 

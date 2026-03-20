@@ -65,6 +65,7 @@ const endpoints = {
   refreshActivities: () => get('/api/activities/refresh'),
   getActivity: (id) => get(`/api/activities/${id}`),
   suggestActivities: (query) => get(`/api/activities/suggest?query=${encodeURIComponent(query)}`),
+  productSearch: (query) => get(`/api/products/search?query=${encodeURIComponent(query)}`),
   
   // Athlete statistics
   profileStatistics: (activity, year) => get(`/api/athletes/statistics/profile/${activity}/${year}`),

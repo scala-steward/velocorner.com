@@ -9,6 +9,7 @@ import { Box } from '@chakra-ui/react'
 import Home from "./pages/Home"
 import About from "./pages/About"
 import Search from "./pages/Search"
+import ProductSearch from "./pages/ProductSearch"
 import Privacy from "./pages/Privacy"
 import NotFound from "./pages/NotFound"
 import Admin from "./pages/Admin"
@@ -76,6 +77,7 @@ const App = () => {
         <Route path="/" element={<Layout><Home /></Layout>} />
         <Route path="/about" element={<Layout><About /></Layout>} />
         <Route path="/search" element={<Layout><Search /></Layout>} />
+        <Route path="/product-search" element={<Layout><ProductSearch /></Layout>} />
         <Route path="/admin" element={<Layout><Admin /></Layout>} />
         <Route path="/privacy" element={<Layout><Privacy /></Layout>} />
         <Route path="/oauth/strava" element={<OAuth2Popup />} />
