@@ -14,8 +14,16 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import velocorner.api.brand.Marketplace
 import velocorner.crawler.build.BuildInfo
+import cats.effect.unsafe.IORuntimeConfig
+import scala.concurrent.duration.DurationInt
 
 object Main extends IOApp.Simple {
+
+  // relax threshold to 500 milliseconds, on poorer AWS EC2 t4g.small can kick in on bigger uploads
+  override def runtimeConfig: IORuntimeConfig = super.runtimeConfig.copy(
+    cpuStarvationCheckInterval = 5.seconds, // 1 sec the default
+    cpuStarvationCheckThreshold = 0.2d // 0.1d the default
+  )
 
   override def run: IO[Unit] = {
     val server: Resource[IO, Server] = for {

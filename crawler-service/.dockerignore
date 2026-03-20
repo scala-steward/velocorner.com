@@ -1,0 +1,9 @@
+playwright/node_modules
+target/scala-2.13/classes
+target/scala-2.13/src_managed
+target/scala-2.13/sync
+target/scala-2.13/test-classes
+target/scala-2.13/test-sync
+target/scala-2.13/test-zinc
+target/scala-2.13/update
+target/scala-2.13/zinc
