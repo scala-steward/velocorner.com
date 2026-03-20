@@ -6,6 +6,7 @@ import velocorner.SecretConfig
 import velocorner.util.JsonIo
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 // client interface to the data-crawler service
 trait ProductFeed {
@@ -25,7 +26,7 @@ class ProductCrawlerFeed(override val config: SecretConfig) extends HttpFeed wit
       .map(JsonIo.read[List[Marketplace]])
 
   override def search(term: String): Future[List[ProductDetails]] =
-    ws(_.url(s"$baseUrl/search/$term").get())
+    ws(_.url(s"$baseUrl/search/$term").withRequestTimeout(2.minutes).get())
       .map(_.body)
       .map(JsonIo.read[List[ProductDetails]])
 }
