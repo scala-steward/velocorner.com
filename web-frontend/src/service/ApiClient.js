@@ -4,8 +4,11 @@ const webHost = import.meta.env.VITE_WEB_HOST || 'https://velocorner.com';
 console.info('api host:', apiHost);
 console.info('web host:', webHost);
 
-function request(method, path, data) {
+function request(method, path, data, requestOptions = {}) {
   const token = localStorage.getItem('access_token');
+  const controller = new AbortController();
+  const timeoutMs = requestOptions.timeout;
+  const timeoutId = timeoutMs ? window.setTimeout(() => controller.abort(), timeoutMs) : null;
   const options = {
     method,
     headers: {
@@ -15,6 +18,7 @@ function request(method, path, data) {
     },
     cache: 'no-cache',
     mode: 'cors',
+    signal: controller.signal,
     ...(data && { body: JSON.stringify(data) })
   };
   
@@ -45,10 +49,15 @@ function request(method, path, data) {
       // Try to parse as JSON, but handle empty responses gracefully
       const text = await r.text();
       return text ? JSON.parse(text) : null;
+    })
+    .finally(() => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     });
 }
 
-const get = (path) => request('GET', path);
+const get = (path, requestOptions) => request('GET', path, undefined, requestOptions);
 const put = (path, data) => request('PUT', path, data);
 
 const endpoints = {
@@ -65,7 +74,7 @@ const endpoints = {
   refreshActivities: () => get('/api/activities/refresh'),
   getActivity: (id) => get(`/api/activities/${id}`),
   suggestActivities: (query) => get(`/api/activities/suggest?query=${encodeURIComponent(query)}`),
-  productSearch: (query) => get(`/api/products/search?query=${encodeURIComponent(query)}`),
+  productSearch: (query) => get(`/api/products/search?query=${encodeURIComponent(query)}`, { timeout: 120000 }),
   
   // Athlete statistics
   profileStatistics: (activity, year) => get(`/api/athletes/statistics/profile/${activity}/${year}`),
