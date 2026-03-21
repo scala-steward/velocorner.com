@@ -11,17 +11,10 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { MapContainer, TileLayer, Polyline, CircleMarker, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import { LuExternalLink, LuMountain, LuRoute } from "react-icons/lu";
 import ApiClient from "@/service/ApiClient";
 import type { AthleteUnits } from "@/types/athlete";
 import { dashboardCardProps } from "./shared";
-
-const LeafletMapContainer = MapContainer as any;
-const LeafletTileLayer = TileLayer as any;
-const LeafletPolyline = Polyline as any;
-const LeafletCircleMarker = CircleMarker as any;
 
 type LastActivity = {
   id: number;
@@ -43,11 +36,50 @@ type ActivityRoute = {
   points: ActivityRoutePoint[];
 };
 
+type TerrainBounds = {
+  minLat: number;
+  maxLat: number;
+  minLon: number;
+  maxLon: number;
+};
+
+type TerrainPoint = {
+  lat: number;
+  lon: number;
+  ele?: number;
+};
+
+type ActivityTerrain = {
+  activityId: number;
+  source: string;
+  rows: number;
+  cols: number;
+  bounds: TerrainBounds;
+  points: TerrainPoint[];
+};
+
+type ProjectedPoint = {
+  x: number;
+  y: number;
+  elevation: number;
+};
+
+type TerrainCell = {
+  key: string;
+  polygon: string;
+  color: string;
+  stroke: string;
+  opacity: number;
+};
+
 type ElevationSample = {
   distance: number;
   elevation: number;
-  grade: number;
 };
+
+const SCENE_WIDTH = 860;
+const SCENE_HEIGHT = 520;
+const MAX_RENDER_POINTS = 180;
 
 const formatDistance = (distanceMeters?: number, units?: AthleteUnits) => {
   const value = distanceMeters ?? 0;
@@ -63,14 +95,6 @@ const formatElevation = (elevationMeters?: number, units?: AthleteUnits) => {
     return `${Math.round(value * 3.28084)} ft`;
   }
   return `${Math.round(value)} m`;
-};
-
-const formatProfileDistance = (distanceMeters: number, units?: AthleteUnits) => {
-  if (units?.distanceLabel === "mi") {
-    return `${(distanceMeters / 1609.344).toFixed(1)} mi`;
-  }
-
-  return `${(distanceMeters / 1000).toFixed(1)} km`;
 };
 
 const formatDate = (dateValue?: string) => {
@@ -89,22 +113,12 @@ const formatDate = (dateValue?: string) => {
   }).format(date);
 };
 
-const RouteBounds = ({ positions }: { positions: [number, number][] }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (positions.length < 2) return;
-    map.fitBounds(positions, { padding: [32, 32] });
-  }, [map, positions]);
-
-  return null;
-};
-
-const EARTH_RADIUS_METERS = 6371000;
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
 const getDistanceBetweenPoints = (start: ActivityRoutePoint, end: ActivityRoutePoint) => {
+  const earthRadius = 6371000;
   const lat1 = toRadians(start.lat);
   const lat2 = toRadians(end.lat);
   const deltaLat = lat2 - lat1;
@@ -113,186 +127,316 @@ const getDistanceBetweenPoints = (start: ActivityRoutePoint, end: ActivityRouteP
   const a = Math.sin(deltaLat / 2) ** 2
     + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
 
-  return 2 * EARTH_RADIUS_METERS * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return 2 * earthRadius * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-const getGradeColor = (grade: number) => {
-  if (grade >= 10) return "#7f1d1d";
-  if (grade >= 7) return "#dc2626";
-  if (grade >= 4) return "#f97316";
-  if (grade >= 2) return "#f59e0b";
-  if (grade > -2) return "#22c55e";
-  if (grade > -6) return "#0ea5e9";
-  return "#2563eb";
+const downsampleRoute = (points: ActivityRoutePoint[]) => {
+  if (points.length <= MAX_RENDER_POINTS) return points;
+
+  const step = (points.length - 1) / (MAX_RENDER_POINTS - 1);
+  return Array.from({ length: MAX_RENDER_POINTS }, (_, index) => points[Math.round(index * step)]);
 };
 
-const ELEVATION_LEGEND = [
-  { label: "Flat", color: "#22c55e" },
-  { label: "2-4%", color: "#f59e0b" },
-  { label: "4-7%", color: "#f97316" },
-  { label: "7%+", color: "#dc2626" },
-];
+const deriveBoundsFromRoute = (points: ActivityRoutePoint[]): TerrainBounds => {
+  const latitudes = points.map((point) => point.lat);
+  const longitudes = points.map((point) => point.lon);
+  const minLat = Math.min(...latitudes);
+  const maxLat = Math.max(...latitudes);
+  const minLon = Math.min(...longitudes);
+  const maxLon = Math.max(...longitudes);
+  const latPadding = Math.max((maxLat - minLat) * 0.18, 0.0035);
+  const lonPadding = Math.max((maxLon - minLon) * 0.18, 0.0035);
 
-const ElevationProfile = ({
-  samples,
-  units,
-}: {
-  samples: ElevationSample[];
-  units: AthleteUnits;
-}) => {
-  const width = 1000;
-  const height = 220;
-  const paddingX = 24;
-  const paddingTop = 18;
-  const paddingBottom = 30;
-  const chartHeight = height - paddingTop - paddingBottom;
-  const maxDistance = samples[samples.length - 1]?.distance ?? 0;
+  return {
+    minLat: minLat - latPadding,
+    maxLat: maxLat + latPadding,
+    minLon: minLon - lonPadding,
+    maxLon: maxLon + lonPadding,
+  };
+};
+
+const buildProjector = (bounds: TerrainBounds, minElevation: number, maxElevation: number) => {
+  const latSpan = Math.max(bounds.maxLat - bounds.minLat, 0.0001);
+  const lonSpan = Math.max(bounds.maxLon - bounds.minLon, 0.0001);
+  const elevationSpan = Math.max(maxElevation - minElevation, 1);
+  const yaw = -Math.PI / 4.7;
+  const pitch = Math.PI / 5.2;
+  const scaleX = 380;
+  const scaleZ = 280;
+  const scaleY = 190;
+  const centerX = SCENE_WIDTH / 2;
+  const centerY = SCENE_HEIGHT * 0.64;
+
+  return (lat: number, lon: number, elevation?: number): ProjectedPoint => {
+    const xRatio = (lon - bounds.minLon) / lonSpan;
+    const zRatio = (lat - bounds.minLat) / latSpan;
+    const normalizedElevation = clamp(((elevation ?? minElevation) - minElevation) / elevationSpan, 0, 1);
+    const worldX = (xRatio - 0.5) * 2 * scaleX;
+    const worldZ = (zRatio - 0.5) * 2 * scaleZ;
+    const worldY = normalizedElevation * scaleY;
+    const rotatedX = worldX * Math.cos(yaw) - worldZ * Math.sin(yaw);
+    const rotatedZ = worldX * Math.sin(yaw) + worldZ * Math.cos(yaw);
+    const tiltedY = worldY * Math.cos(pitch) - rotatedZ * Math.sin(pitch);
+    const depth = worldY * Math.sin(pitch) + rotatedZ * Math.cos(pitch);
+    const perspective = 1 + depth / 1100;
+
+    return {
+      x: centerX + rotatedX * perspective,
+      y: centerY - tiltedY * perspective,
+      elevation: elevation ?? minElevation,
+    };
+  };
+};
+
+const getTerrainShade = (elevationRatio: number, slopeRatio: number) => {
+  const hue = 145 - elevationRatio * 112;
+  const saturation = 30 + elevationRatio * 20 + slopeRatio * 10;
+  const lightness = 31 + elevationRatio * 32 - slopeRatio * 12;
+
+  return {
+    fill: `hsl(${hue} ${saturation}% ${lightness}%)`,
+    stroke: `hsla(${hue - 8} ${Math.max(saturation - 6, 18)}% ${Math.max(lightness - 16, 16)}% / 0.62)`,
+    opacity: 0.82 + slopeRatio * 0.16,
+  };
+};
+
+const buildTerrainCells = (terrain: ActivityTerrain, projector: ReturnType<typeof buildProjector>, minElevation: number, maxElevation: number) => {
+  if (terrain.points.length !== terrain.rows * terrain.cols) return [] as TerrainCell[];
+
+  const projected = terrain.points.map((point) => projector(point.lat, point.lon, point.ele));
+  const cells: TerrainCell[] = [];
+  const elevationSpan = Math.max(maxElevation - minElevation, 1);
+
+  for (let row = 0; row < terrain.rows - 1; row += 1) {
+    for (let col = 0; col < terrain.cols - 1; col += 1) {
+      const topLeft = projected[row * terrain.cols + col];
+      const topRight = projected[row * terrain.cols + col + 1];
+      const bottomLeft = projected[(row + 1) * terrain.cols + col];
+      const bottomRight = projected[(row + 1) * terrain.cols + col + 1];
+      const averageElevation = (topLeft.elevation + topRight.elevation + bottomLeft.elevation + bottomRight.elevation) / 4;
+      const elevationRatio = clamp((averageElevation - minElevation) / elevationSpan, 0, 1);
+      const slopeRatio = clamp(
+        (
+          Math.abs(topLeft.elevation - topRight.elevation)
+          + Math.abs(topLeft.elevation - bottomLeft.elevation)
+          + Math.abs(bottomRight.elevation - bottomLeft.elevation)
+          + Math.abs(bottomRight.elevation - topRight.elevation)
+        ) / (elevationSpan * 1.35),
+        0,
+        1,
+      );
+      const shade = getTerrainShade(elevationRatio, slopeRatio);
+
+      cells.push({
+        key: `${row}-${col}`,
+        polygon: [
+          `${topLeft.x},${topLeft.y}`,
+          `${topRight.x},${topRight.y}`,
+          `${bottomRight.x},${bottomRight.y}`,
+          `${bottomLeft.x},${bottomLeft.y}`,
+        ].join(" "),
+        color: shade.fill,
+        stroke: shade.stroke,
+        opacity: shade.opacity,
+      });
+    }
+  }
+
+  return cells;
+};
+
+const buildRouteProjection = (route: ActivityRoute, projector: ReturnType<typeof buildProjector>) => {
+  const sampled = downsampleRoute(route.points);
+
+  return sampled.map((point) => projector(point.lat, point.lon, point.ele));
+};
+
+const buildElevationSamples = (points: ActivityRoutePoint[]) => {
+  const elevatedPoints = points.filter((point): point is ActivityRoutePoint & { ele: number } => typeof point.ele === "number");
+  if (elevatedPoints.length < 2) return [] as ElevationSample[];
+
+  let totalDistance = 0;
+  const samples: ElevationSample[] = [{ distance: 0, elevation: elevatedPoints[0].ele }];
+
+  for (let index = 1; index < elevatedPoints.length; index += 1) {
+    totalDistance += getDistanceBetweenPoints(elevatedPoints[index - 1], elevatedPoints[index]);
+    samples.push({ distance: totalDistance, elevation: elevatedPoints[index].ele });
+  }
+
+  return samples;
+};
+
+const getRouteDistance = (points: ActivityRoutePoint[]) => {
+  if (points.length < 2) return 0;
+
+  let total = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    total += getDistanceBetweenPoints(points[index - 1], points[index]);
+  }
+  return total;
+};
+
+const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; units: AthleteUnits }) => {
+  const width = 860;
+  const height = 136;
+  const paddingX = 18;
+  const paddingTop = 14;
+  const paddingBottom = 24;
   const elevations = samples.map((sample) => sample.elevation);
   const minElevation = Math.min(...elevations);
   const maxElevation = Math.max(...elevations);
-  const elevationRange = Math.max(maxElevation - minElevation, 1);
+  const elevationSpan = Math.max(maxElevation - minElevation, 1);
+  const maxDistance = samples[samples.length - 1]?.distance ?? 1;
   const baselineY = height - paddingBottom;
-
-  const toX = (distance: number) => paddingX + (distance / Math.max(maxDistance, 1)) * (width - paddingX * 2);
-  const toY = (elevation: number) => (
-    paddingTop + ((maxElevation - elevation) / elevationRange) * chartHeight
-  );
-
-  const linePoints = samples.map((sample) => `${toX(sample.distance)},${toY(sample.elevation)}`).join(" ");
-  const areaPath = [
-    `M ${toX(samples[0]?.distance ?? 0)} ${baselineY}`,
-    ...samples.map((sample) => `L ${toX(sample.distance)} ${toY(sample.elevation)}`),
-    `L ${toX(samples[samples.length - 1]?.distance ?? 0)} ${baselineY}`,
-    "Z",
-  ].join(" ");
-
-  const horizontalGuides = [0, 0.5, 1].map((step) => {
-    const elevation = maxElevation - elevationRange * step;
-    return {
-      y: toY(elevation),
-      label: formatElevation(elevation, units),
-    };
-  });
-
-  const gradeSegments = samples.slice(1).map((sample, index) => {
-    const previous = samples[index];
-    return {
-      x1: toX(previous.distance),
-      y1: toY(previous.elevation),
-      x2: toX(sample.distance),
-      y2: toY(sample.elevation),
-      color: getGradeColor(sample.grade),
-    };
-  });
-
-  const peakSample = samples.reduce((highest, sample) => sample.elevation > highest.elevation ? sample : highest, samples[0]);
-  const maxGrade = samples.reduce((steepest, sample) => Math.max(steepest, sample.grade), Number.NEGATIVE_INFINITY);
+  const toX = (distance: number) => paddingX + (distance / maxDistance) * (width - paddingX * 2);
+  const toY = (elevation: number) => paddingTop + ((maxElevation - elevation) / elevationSpan) * (height - paddingTop - paddingBottom);
+  const line = samples.map((sample, index) => `${index === 0 ? "M" : "L"} ${toX(sample.distance)} ${toY(sample.elevation)}`).join(" ");
+  const area = `${line} L ${toX(maxDistance)} ${baselineY} L ${toX(0)} ${baselineY} Z`;
 
   return (
-    <Box
-      borderRadius="24px"
-      p={{ base: 4, md: 5 }}
-      bg="linear-gradient(180deg, rgba(232,241,248,0.96), rgba(216,231,242,0.92))"
-      color="gray.900"
-      boxShadow="inset 0 1px 0 rgba(255,255,255,0.6)"
-    >
-      <HStack justify="space-between" align="start" gap={3} mb={3} flexWrap="wrap">
-        <Box>
-          <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="gray.900" fontWeight="bold">
-            Elevation Profile
-          </Text>
-        </Box>
-        <HStack gap={2} flexWrap="wrap">
-          {ELEVATION_LEGEND.map((entry) => (
-            <HStack key={entry.label} gap={2}>
-              <Box w="10px" h="10px" borderRadius="full" bg={entry.color} />
-              <Text fontSize="xs" color="slate.700">{entry.label}</Text>
-            </HStack>
-          ))}
-        </HStack>
+    <Box borderRadius="22px" p={3} bg="linear-gradient(180deg, rgba(12, 31, 46, 0.06), rgba(12, 31, 46, 0.02))" border="1px solid rgba(18, 38, 63, 0.06)">
+      <HStack justify="space-between" mb={2}>
+        <Text textTransform="uppercase" letterSpacing="0.16em" fontSize="xs" color="slate.500" fontWeight="semibold">
+          Elevation profile
+        </Text>
+        <Text fontSize="xs" color="slate.500">
+          {formatElevation(maxElevation - minElevation, units)} relief
+        </Text>
       </HStack>
-
-      <Box borderRadius="18px" overflow="hidden" bg="rgba(255,255,255,0.52)" border="1px solid rgba(148,163,184,0.2)">
-        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="220" role="img" aria-label="Elevation profile for the latest activity">
+      <Box borderRadius="16px" overflow="hidden" bg="linear-gradient(180deg, rgba(186, 230, 253, 0.28), rgba(255,255,255,0.76))">
+        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="136" role="img" aria-label="Elevation profile of the latest activity">
           <defs>
-            <linearGradient id="elevation-area-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(59,130,246,0.22)" />
-              <stop offset="100%" stopColor="rgba(59,130,246,0.04)" />
+            <linearGradient id="activity-profile-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(59,130,246,0.42)" />
+              <stop offset="100%" stopColor="rgba(59,130,246,0.06)" />
             </linearGradient>
           </defs>
-
-          <rect x="0" y="0" width={width} height={height} fill="transparent" />
-
-          {horizontalGuides.map((guide) => (
-            <g key={guide.label}>
-              <line
-                x1={paddingX}
-                y1={guide.y}
-                x2={width - paddingX}
-                y2={guide.y}
-                stroke="rgba(71,85,105,0.18)"
-                strokeDasharray="6 8"
-              />
-              <text x={paddingX} y={guide.y - 6} fill="rgba(51,65,85,0.72)" fontSize="18">
-                {guide.label}
-              </text>
-            </g>
-          ))}
-
-          <path d={areaPath} fill="url(#elevation-area-fill)" />
-          <polyline
-            points={linePoints}
-            fill="none"
-            stroke="rgba(255,255,255,0.72)"
-            strokeWidth="14"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {gradeSegments.map((segment, index) => (
+          {[0.25, 0.5, 0.75].map((ratio) => (
             <line
-              key={`${segment.x1}-${segment.x2}-${index}`}
-              x1={segment.x1}
-              y1={segment.y1}
-              x2={segment.x2}
-              y2={segment.y2}
-              stroke={segment.color}
-              strokeWidth="8"
-              strokeLinecap="round"
+              key={ratio}
+              x1={paddingX}
+              x2={width - paddingX}
+              y1={paddingTop + ratio * (height - paddingTop - paddingBottom)}
+              y2={paddingTop + ratio * (height - paddingTop - paddingBottom)}
+              stroke="rgba(71,85,105,0.12)"
+              strokeDasharray="5 7"
             />
           ))}
-
-          <circle cx={toX(peakSample.distance)} cy={toY(peakSample.elevation)} r="7" fill="#ffffff" />
-          <text
-            x={Math.min(toX(peakSample.distance) + 12, width - 150)}
-            y={Math.max(toY(peakSample.elevation) - 12, 20)}
-            fill="#0f172a"
-            fontSize="20"
-            fontWeight="700"
-          >
-            Peak {formatElevation(peakSample.elevation, units)}
-          </text>
-
-          <text x={paddingX} y={height - 8} fill="rgba(51,65,85,0.76)" fontSize="18">
-            Start
-          </text>
-          <text x={width / 2} y={height - 8} fill="rgba(51,65,85,0.76)" fontSize="18" textAnchor="middle">
-            {formatProfileDistance(maxDistance / 2, units)}
-          </text>
-          <text x={width - paddingX} y={height - 8} fill="rgba(51,65,85,0.76)" fontSize="18" textAnchor="end">
-            {formatProfileDistance(maxDistance, units)}
+          <path d={area} fill="url(#activity-profile-fill)" />
+          <path d={line} fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={line} fill="none" stroke="#0f766e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <text x={paddingX} y={height - 8} fill="rgba(51,65,85,0.72)" fontSize="16">0</text>
+          <text x={width - paddingX} y={height - 8} textAnchor="end" fill="rgba(51,65,85,0.72)" fontSize="16">
+            {formatDistance(maxDistance, units)}
           </text>
         </svg>
       </Box>
-
-      <HStack mt={3} justify="space-between" gap={3} flexWrap="wrap">
-        <Text fontSize="sm" color="slate.700">
-          Highest gradient: {Number.isFinite(maxGrade) ? `${maxGrade.toFixed(1)}%` : "n/a"}
-        </Text>
-        <Text fontSize="sm" color="slate.700">
-          Elevation range: {formatElevation(maxElevation - minElevation, units)}
-        </Text>
-      </HStack>
     </Box>
+  );
+};
+
+const TerrainScene = ({
+  route,
+  terrain,
+  units,
+}: {
+  route: ActivityRoute;
+  terrain: ActivityTerrain | null;
+  units: AthleteUnits;
+}) => {
+  const bounds = terrain?.bounds ?? deriveBoundsFromRoute(route.points);
+  const routeElevations = route.points.map((point) => point.ele).filter((value): value is number => typeof value === "number");
+  const terrainElevations = terrain?.points.map((point) => point.ele).filter((value): value is number => typeof value === "number") ?? [];
+  const elevations = [...routeElevations, ...terrainElevations];
+  const minElevation = elevations.length ? Math.min(...elevations) : 0;
+  const maxElevation = elevations.length ? Math.max(...elevations) : 1;
+  const projector = buildProjector(bounds, minElevation, maxElevation);
+  const terrainCells = terrain ? buildTerrainCells(terrain, projector, minElevation, maxElevation) : [];
+  const routeProjection = buildRouteProjection(route, projector);
+  const elevationSamples = buildElevationSamples(route.points);
+  const routePath = routeProjection.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+  const start = routeProjection[0];
+  const finish = routeProjection[routeProjection.length - 1];
+  const contourLevels = Array.from({ length: 6 }, (_, index) => minElevation + ((index + 1) / 7) * (maxElevation - minElevation || 1));
+
+  return (
+    <VStack align="stretch" gap={3}>
+      <Box
+        borderRadius="28px"
+        overflow="hidden"
+        position="relative"
+        minH={{ base: "260px", md: "320px" }}
+        bg="linear-gradient(180deg, #7cb0d0 0%, #dcecf3 28%, #6e8f6b 100%)"
+        boxShadow="inset 0 1px 0 rgba(255,255,255,0.18)"
+      >
+        <Box
+          position="absolute"
+          inset={0}
+          bg="radial-gradient(circle at 18% 14%, rgba(255,255,255,0.42), transparent 26%), linear-gradient(180deg, rgba(255,255,255,0.08), transparent 42%)"
+        />
+
+        <VStack position="absolute" top={{ base: 4, md: 5 }} left={{ base: 4, md: 5 }} align="start" gap={2} zIndex={2}>
+          <Badge colorPalette={terrain ? "green" : "orange"} borderRadius="full" px={3} py={1}>
+            Terrain model
+          </Badge>
+        </VStack>
+
+        <Box position="absolute" inset={0} pt={{ base: 20, md: 16 }}>
+          <svg viewBox={`0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`} width="100%" height="100%" role="img" aria-label="3D terrain and route for the latest activity">
+            <defs>
+              <filter id="terrain-surface-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="15" stdDeviation="12" floodColor="rgba(15, 23, 42, 0.28)" />
+              </filter>
+              <filter id="route-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(255,255,255,0.55)" />
+              </filter>
+            </defs>
+
+            {terrainCells.map((cell) => (
+              <polygon
+                key={cell.key}
+                points={cell.polygon}
+                fill={cell.color}
+                fillOpacity={cell.opacity}
+                stroke={cell.stroke}
+                strokeWidth="1"
+                filter="url(#terrain-surface-shadow)"
+              />
+            ))}
+
+            {terrainCells.map((cell, index) => contourLevels.length > 0 && index % Math.max(Math.floor(terrainCells.length / 180), 3) === 0 ? (
+              <polyline
+                key={`contour-${cell.key}`}
+                points={cell.polygon}
+                fill="none"
+                stroke="rgba(30, 41, 59, 0.12)"
+                strokeWidth="0.8"
+              />
+            ) : null)}
+
+            <path d={routePath} fill="none" stroke="rgba(255,255,255,0.46)" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round" filter="url(#route-glow)" />
+            <path d={routePath} fill="none" stroke="#b91c1c" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={routePath} fill="none" stroke="#fde68a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
+
+            {start && <circle cx={start.x} cy={start.y} r="8" fill="#22c55e" stroke="#ecfeff" strokeWidth="4" />}
+            {finish && <circle cx={finish.x} cy={finish.y} r="9" fill="#f97316" stroke="#ffffff" strokeWidth="4" />}
+
+            {start && (
+              <text x={start.x - 8} y={start.y - 18} fill="rgba(248,250,252,0.96)" fontSize="17" fontWeight="700" textAnchor="end">
+                Start
+              </text>
+            )}
+            {finish && (
+              <text x={finish.x + 12} y={finish.y - 18} fill="rgba(255,247,237,0.98)" fontSize="17" fontWeight="700">
+                Finish
+              </text>
+            )}
+          </svg>
+        </Box>
+      </Box>
+
+      {elevationSamples.length > 1 && <ElevationProfile samples={elevationSamples} units={units} />}
+    </VStack>
   );
 };
 
@@ -303,6 +447,7 @@ interface LastActivityRoute3DProps {
 const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
   const [activity, setActivity] = useState<LastActivity | null>(null);
   const [route, setRoute] = useState<ActivityRoute | null>(null);
+  const [terrain, setTerrain] = useState<ActivityTerrain | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -321,15 +466,26 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
             const routeData = await ApiClient.activityRoute(data.id);
             if (!active) return;
             setRoute(routeData ?? null);
-            setError(null);
+            setError(routeData?.points?.length ? null : "Route unavailable for this activity.");
           } catch (routeError) {
             console.error("Error fetching activity route:", routeError);
             if (!active) return;
             setRoute(null);
             setError("Route unavailable for this activity.");
           }
+
+          try {
+            const terrainData = await ApiClient.activityTerrain(data.id);
+            if (!active) return;
+            setTerrain(terrainData ?? null);
+          } catch (terrainError) {
+            console.error("Error fetching activity terrain:", terrainError);
+            if (!active) return;
+            setTerrain(null);
+          }
         } else {
           setRoute(null);
+          setTerrain(null);
           setError("No latest activity available.");
         }
       } catch (fetchError) {
@@ -337,6 +493,7 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
         if (!active) return;
         setActivity(null);
         setRoute(null);
+        setTerrain(null);
         setError("Latest activity route is currently unavailable.");
       } finally {
         if (active) {
@@ -352,170 +509,44 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
     };
   }, []);
 
-  const positions = useMemo<[number, number][]>(() => {
-    if (!route?.points?.length) return [];
-    return route.points.map((point) => [point.lat, point.lon]);
-  }, [route]);
+  const elevationSummary = useMemo(() => {
+    const terrainElevations = terrain?.points.map((point) => point.ele).filter((value): value is number => typeof value === "number") ?? [];
+    const routeElevations = route?.points.map((point) => point.ele).filter((value): value is number => typeof value === "number") ?? [];
+    const elevations = terrainElevations.length ? terrainElevations : routeElevations;
 
-  const elevationProfile = useMemo<ElevationSample[]>(() => {
-    if (!route?.points?.length) return [];
+    if (elevations.length < 2) return null;
 
-    const firstPoint = route.points[0];
-    if (firstPoint?.ele == null || Number.isNaN(firstPoint.ele)) {
-      return [];
-    }
+    return {
+      high: Math.max(...elevations),
+      low: Math.min(...elevations),
+    };
+  }, [route, terrain]);
 
-    const samples: ElevationSample[] = [{
-      distance: 0,
-      elevation: firstPoint.ele,
-      grade: 0,
-    }];
-
-    let cumulativeDistance = 0;
-    let previousPoint = firstPoint;
-
-    for (let index = 1; index < route.points.length; index += 1) {
-      const currentPoint = route.points[index];
-      if (currentPoint.ele == null || Number.isNaN(currentPoint.ele)) {
-        continue;
-      }
-
-      const segmentDistance = getDistanceBetweenPoints(previousPoint, currentPoint);
-      cumulativeDistance += segmentDistance;
-
-      const elevationDelta = currentPoint.ele - (previousPoint.ele ?? currentPoint.ele);
-      const grade = segmentDistance >= 8 ? (elevationDelta / segmentDistance) * 100 : 0;
-
-      samples.push({
-        distance: cumulativeDistance,
-        elevation: currentPoint.ele,
-        grade,
-      });
-
-      previousPoint = currentPoint;
-    }
-
-    return samples.length > 1 ? samples : [];
-  }, [route]);
-
-  const hasRoute = positions.length > 1;
-  const startPoint = hasRoute ? positions[0] : null;
-  const endPoint = hasRoute ? positions[positions.length - 1] : null;
-  const hasElevationProfile = elevationProfile.length > 1;
+  const routeDistance = useMemo(() => (route ? getRouteDistance(route.points) : 0), [route]);
+  const hasRoute = Boolean(route?.points?.length && route.points.length > 1);
 
   return (
     <Card.Root {...dashboardCardProps} overflow="hidden">
       <Card.Body p={{ base: 5, md: 6 }}>
-        <Grid templateColumns={{ base: "1fr", xl: "minmax(0, 1.08fr) minmax(0, 1.08fr) minmax(220px, 0.56fr)" }} gap={{ base: 5, md: 6 }} alignItems="stretch">
-          <Box
-            position="relative"
-            minH={{ base: "280px", md: "340px" }}
-            borderRadius="24px"
-            overflow="hidden"
-            bg="#d9e7ef"
-          >
-            {hasRoute ? (
-              <Box
-                position="absolute"
-                inset={0}
-              >
-                <style>
-                  {`
-                    .last-activity-map .leaflet-container {
-                      height: 100%;
-                      width: 100%;
-                      background: #d9e7ef;
-                      font-family: inherit;
-                    }
-                    .last-activity-map .leaflet-control-attribution {
-                      background: rgba(255,255,255,0.78);
-                      font-size: 10px;
-                    }
-                    .last-activity-map .leaflet-pane.leaflet-tile-pane {
-                      filter: saturate(0.95) contrast(1.02);
-                    }
-                  `}
-                </style>
-                <LeafletMapContainer
-                  className="last-activity-map"
-                  center={positions[Math.floor(positions.length / 2)]}
-                  zoom={13}
-                  scrollWheelZoom={false}
-                  dragging={false}
-                  doubleClickZoom={false}
-                  touchZoom={false}
-                  boxZoom={false}
-                  keyboard={false}
-                  zoomControl={false}
-                  attributionControl
-                  style={{ height: "100%", width: "100%" }}
-                >
-                  <LeafletTileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <RouteBounds positions={positions} />
-                  <LeafletPolyline
-                    positions={positions}
-                    pathOptions={{
-                      color: "#ffffff",
-                      weight: 10,
-                      opacity: 0.7,
-                      lineCap: "round",
-                      lineJoin: "round",
-                    }}
-                  />
-                  <LeafletPolyline
-                    positions={positions}
-                    pathOptions={{
-                      color: "#e53e3e",
-                      weight: 5,
-                      opacity: 0.95,
-                      lineCap: "round",
-                      lineJoin: "round",
-                    }}
-                  />
-                  {startPoint && (
-                    <LeafletCircleMarker
-                      center={startPoint}
-                      radius={7}
-                      pathOptions={{ color: "#1f9d55", fillColor: "#ffffff", fillOpacity: 1, weight: 4 }}
-                    />
-                  )}
-                  {endPoint && (
-                    <LeafletCircleMarker
-                      center={endPoint}
-                      radius={8}
-                      pathOptions={{ color: "#ffffff", fillColor: "#e53e3e", fillOpacity: 1, weight: 4 }}
-                    />
-                  )}
-                </LeafletMapContainer>
-              </Box>
-            ) : null}
-
-            <VStack position="absolute" top={{ base: 4, md: 5 }} left={{ base: 4, md: 5 }} align="start" gap={2} zIndex={3}>
-              <Badge colorPalette={hasRoute ? "green" : "orange"} borderRadius="full" px={3} py={1}>
-                {hasRoute ? "Route" : "Route unavailable"}
-              </Badge>
-              <Heading size={{ base: "md", md: "lg" }} color="white" maxW="320px">
-                3D view of your latest activity
-              </Heading>
-              <Text color="whiteAlpha.800" maxW="360px" fontSize="sm">
-                {hasRoute
-                  ? "Rendered from normalized route geometry returned by the backend."
-                  : "This activity does not currently expose route geometry from Strava."}
-              </Text>
-            </VStack>
-          </Box>
-
-          {hasElevationProfile ? (
-            <ElevationProfile samples={elevationProfile} units={units} />
+        <Grid templateColumns={{ base: "1fr", xl: "minmax(0, 1.45fr) minmax(280px, 0.75fr)" }} gap={{ base: 5, md: 6 }} alignItems="stretch">
+          {loading ? (
+            <HStack gap={3} minH="260px" justify="center" borderRadius="28px" bg="rgba(18, 38, 63, 0.04)">
+              <Spinner size="sm" />
+              <Text color="slate.600">Building the terrain view of your latest activity...</Text>
+            </HStack>
+          ) : hasRoute && route ? (
+            <TerrainScene route={route} terrain={terrain} units={units} />
           ) : (
-            <Box borderRadius="24px" p={{ base: 4, md: 5 }} bg="rgba(18, 38, 63, 0.04)" minH={{ base: "220px", md: "340px" }}>
-              <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="slate.500" fontWeight="semibold" mb={2}>
-                Elevation Profile
+            <Box borderRadius="28px" p={{ base: 5, md: 6 }} bg="rgba(18, 38, 63, 0.04)" minH="260px">
+              <Badge colorPalette="orange" borderRadius="full" px={3} py={1} mb={4}>
+                Terrain unavailable
+              </Badge>
+              <Heading size="md" color="gray.900" mb={3}>
+                We could not build a terrain scene for your latest activity.
+              </Heading>
+              <Text color="slate.600">
+                {error || "No route geometry was returned for the latest activity."}
               </Text>
-              <Text color="slate.600">Elevation data is unavailable for this activity.</Text>
             </Box>
           )}
 
@@ -537,26 +568,46 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
                   </Heading>
                   <Text color="slate.600">{formatDate(activity.start_date_local)}</Text>
 
-                  <Grid templateColumns="1fr" gap={3}>
+                  <Grid templateColumns={{ base: "1fr", sm: "repeat(2, minmax(0, 1fr))" }} gap={3}>
                     <Box borderRadius="20px" p={4} bg="rgba(18, 38, 63, 0.04)">
                       <HStack mb={2} color="slate.500">
                         <LuRoute />
                         <Text fontSize="sm">Distance</Text>
                       </HStack>
                       <Text fontSize="xl" fontWeight="bold" color="gray.900">
-                        {formatDistance(activity.distance, units)}
+                        {formatDistance(activity.distance ?? routeDistance, units)}
                       </Text>
                     </Box>
 
                     <Box borderRadius="20px" p={4} bg="rgba(18, 38, 63, 0.04)">
                       <HStack mb={2} color="slate.500">
                         <LuMountain />
-                        <Text fontSize="sm">Elevation</Text>
+                        <Text fontSize="sm">Elevation gain</Text>
                       </HStack>
                       <Text fontSize="xl" fontWeight="bold" color="gray.900">
                         {formatElevation(activity.total_elevation_gain, units)}
                       </Text>
                     </Box>
+
+                    {elevationSummary && (
+                      <Box borderRadius="20px" p={4} bg="rgba(18, 38, 63, 0.04)" gridColumn={{ base: "auto", sm: "1 / -1" }}>
+                        <Text fontSize="sm" color="slate.500" mb={2}>Terrain span</Text>
+                        <HStack justify="space-between" gap={4} flexWrap="wrap">
+                          <Box>
+                            <Text fontSize="xs" color="slate.500">High point</Text>
+                            <Text fontSize="lg" fontWeight="bold" color="gray.900">
+                              {formatElevation(elevationSummary.high, units)}
+                            </Text>
+                          </Box>
+                          <Box>
+                            <Text fontSize="xs" color="slate.500">Low point</Text>
+                            <Text fontSize="lg" fontWeight="bold" color="gray.900">
+                              {formatElevation(elevationSummary.low, units)}
+                            </Text>
+                          </Box>
+                        </HStack>
+                      </Box>
+                    )}
                   </Grid>
                 </>
               ) : (
@@ -567,6 +618,12 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
             </VStack>
 
             <VStack align="stretch" gap={4}>
+              {terrain && (
+                <Text fontSize="xs" color="slate.600">
+                  DEM resolution: {terrain.rows} x {terrain.cols}
+                </Text>
+              )}
+
               {activity && (
                 <Link
                   href={`https://www.strava.com/activities/${activity.id}`}

@@ -65,6 +65,7 @@ case class SecretConfig(configProps: Config) {
   def getCrawlerUrl: String = config.getString("CRAWLER_URL")
   def getRatesUrl: String = config.getString("RATES_URL")
   def getWeatherUrl: String = config.getString("WEATHER_URL")
+  def getDemUrl: String = config.getOptAs[String]("DEM_URL").getOrElse("https://api.open-meteo.com/v1/elevation")
 
   def getAiChatProvider: String =
     config
