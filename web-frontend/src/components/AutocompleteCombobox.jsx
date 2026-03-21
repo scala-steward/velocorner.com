@@ -40,6 +40,7 @@ const AutocompleteCombobox = ({
   return (
     <Combobox.Root
       collection={collection}
+      inputValue={value}
       onInputValueChange={(details) => {
         onInputValueChange && onInputValueChange(details.inputValue);
       }}
@@ -52,7 +53,6 @@ const AutocompleteCombobox = ({
       <Combobox.Control>
         <Combobox.Input
           placeholder={placeholder}
-          value={value}
           color="slate.900"
           bg="whiteAlpha.950"
           borderColor="blackAlpha.200"

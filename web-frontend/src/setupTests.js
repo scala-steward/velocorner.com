@@ -66,6 +66,13 @@ vi.mock('react-apexcharts', () => ({
   default: () => null
 }));
 
+vi.mock('@/components/ui/toaster', () => ({
+  Toaster: () => null,
+  toaster: {
+    create: vi.fn(),
+  },
+}));
+
 beforeAll(() => {
   // Mock window.matchMedia
   Object.defineProperty(window, 'matchMedia', {
@@ -119,5 +126,17 @@ beforeAll(() => {
       return;
     }
     originalWarn(...args);
+  };
+
+  const originalError = console.error;
+  console.error = (...args) => {
+    const message = args.join(' ');
+    if (
+      message.includes('input of type text with both value and defaultValue props') ||
+      message.includes('inside a test was not wrapped in act')
+    ) {
+      return;
+    }
+    originalError(...args);
   };
 });
