@@ -102,7 +102,7 @@ const ProfileOverview = ({
                           </Text>
                         )}
                         <Text mt={3} color="slate.600" maxW="2xl" hideBelow="md">
-                          Spot trends, top rides, and personal bests in one place.
+                          Spot trends, top rides, and personal bests.
                         </Text>
                       </Box>
                     </HStack>
@@ -189,7 +189,7 @@ const ProfileOverview = ({
           </Box>
 
           <Box hideBelow="md">
-            <WordCloud words={wordCloud} />
+            <WordCloud words={wordCloud} height={340} />
           </Box>
         </Grid>
       </Card.Body>
