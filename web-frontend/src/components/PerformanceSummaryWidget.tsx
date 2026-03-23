@@ -78,7 +78,7 @@ const trendColorPalette = (label?: string) => {
     case "improving":
       return "green";
     case "stable":
-      return "blue";
+      return "orange";
     case "declining":
       return "red";
     case "inconclusive":
@@ -98,9 +98,9 @@ const trendAccent = (label?: string) => {
       };
     case "stable":
       return {
-        bg: "linear-gradient(135deg, rgba(59,130,246,0.14), rgba(14,165,233,0.06))",
-        borderColor: "rgba(59,130,246,0.18)",
-        textColor: "blue.700"
+        bg: "linear-gradient(135deg, rgba(251,191,36,0.18), rgba(249,115,22,0.08))",
+        borderColor: "rgba(249,115,22,0.18)",
+        textColor: "orange.700"
       };
     case "declining":
       return {
@@ -116,9 +116,9 @@ const trendAccent = (label?: string) => {
       };
     default:
       return {
-        bg: "linear-gradient(135deg, rgba(148,163,184,0.12), rgba(226,232,240,0.08))",
-        borderColor: "rgba(148,163,184,0.18)",
-        textColor: "gray.700"
+        bg: "linear-gradient(135deg, rgba(212,163,115,0.14), rgba(245,222,179,0.1))",
+        borderColor: "rgba(180,83,9,0.14)",
+        textColor: "orange.700"
       };
   }
 };
@@ -220,9 +220,9 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
               <Box
                 p={2.5}
                 borderRadius="2xl"
-                bg="linear-gradient(135deg, rgba(59,130,246,0.14), rgba(14,165,233,0.08))"
-                color="blue.700"
-                boxShadow="inset 0 0 0 1px rgba(59,130,246,0.12)"
+                bg="linear-gradient(135deg, rgba(251,191,36,0.2), rgba(249,115,22,0.1))"
+                color="orange.700"
+                boxShadow="inset 0 0 0 1px rgba(249,115,22,0.12)"
                 flexShrink={0}
               >
                 <LuSparkles />
@@ -377,12 +377,12 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                 </Grid>
               )}
 
-              <Box px={4} py={4} borderRadius="2xl" bg="linear-gradient(180deg, rgba(15,23,42,0.02), rgba(15,23,42,0.05))">
+              <Box px={4} py={4} borderRadius="2xl" bg="linear-gradient(180deg, rgba(250,245,255,0.9), rgba(243,232,255,0.72))">
                 <VStack align="stretch" gap={2}>
-                  <Text fontSize="xs" fontWeight="bold" color="slate.500" textTransform="uppercase" letterSpacing="0.08em">
+                  <Text fontSize="xs" fontWeight="bold" color="purple.700" textTransform="uppercase" letterSpacing="0.08em">
                     Takeaway
                   </Text>
-                  <Text color={summaryText ? "slate.700" : "slate.500"} lineHeight="1.7">
+                  <Text color={summaryText ? "purple.900" : "purple.700"} lineHeight="1.7">
                     {summaryText || "Your latest activities are still being analyzed."}
                   </Text>
                 </VStack>
