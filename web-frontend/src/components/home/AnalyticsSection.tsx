@@ -38,7 +38,7 @@ const AnalyticsSection = ({
       <Image alignSelf="flex-end" width="169px" height="31px" src="/images/powered-by-strava1.png" alt="Powered by Strava" />
 
       <VStack gap={6} align="stretch" id="stats">
-        <Grid templateColumns={{ base: "1fr", xl: "1.5fr 1fr" }} gap={4} alignItems="stretch" hideBelow="md">
+        <Grid templateColumns={{ base: "1fr", xl: "1.3fr 1fr" }} gap={4} alignItems="stretch" hideBelow="md">
           <Box h="100%">
             <ActivityStatsWidget
               selectedActivityType={selectedActivityType}

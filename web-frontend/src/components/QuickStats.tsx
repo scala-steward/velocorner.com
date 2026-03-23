@@ -1,6 +1,6 @@
 import ApiClient from '@/service/ApiClient';
 import type { AthleteUnits, UserStats } from '@/types/athlete';
-import { Box, Grid, Text, Icon, VStack } from '@chakra-ui/react';
+import { Box, Grid, Text, Icon, VStack, HStack } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { LuActivity, LuTrendingUp, LuMountain, LuCalendar } from 'react-icons/lu';
 
@@ -100,18 +100,33 @@ const QuickStats = ({ selectedActivityType, units, demo = false }: QuickStatsPro
           }}
           transition="all 0.3s"
         >
-          <Box
-            display="inline-flex"
+          <HStack
+            align="flex-start"
+            justify="space-between"
+            mb={{ base: 1.5, md: 2 }}
+            w="full"
+          >
+            <Box
+              display="inline-flex"
               p={{ base: 1.25, md: 1.5 }}
-            bgGradient="to-br"
-            gradientFrom={stat.gradientFrom}
-            gradientTo={stat.gradientTo}
-            borderRadius="2xl"
-              mb={{ base: 1.5, md: 2 }}
+              bgGradient="to-br"
+              gradientFrom={stat.gradientFrom}
+              gradientTo={stat.gradientTo}
+              borderRadius="2xl"
               boxShadow="0 14px 28px rgba(20, 32, 51, 0.12)"
             >
               <Icon as={stat.icon} fontSize={{ base: "15px", md: "18px" }} color='white' strokeWidth={2.5} />
             </Box>
+            <Text
+              alignSelf="flex-start"
+              color="slate.500"
+              fontSize={{ base: "xs", md: "xs" }}
+              fontWeight="normal"
+              textAlign="right"
+            >
+              {currentYear}
+            </Text>
+          </HStack>
 
           <VStack alignItems="flex-start" gap={{ base: 0.5, md: 1 }} w="full">
             <Text fontSize={{ base: "lg", md: "xl" }} fontWeight="800" color="slate.900" lineHeight="1.1">

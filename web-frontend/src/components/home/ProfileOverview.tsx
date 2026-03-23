@@ -68,7 +68,7 @@ const ProfileOverview = ({
   return (
     <Card.Root {...heroCardProps}>
       <Card.Body p={{ base: 6, md: 8 }}>
-        <Grid templateColumns={{ base: "1fr", lg: "1.6fr 0.9fr" }} gap={6}>
+        <Grid templateColumns={{ base: "1fr", lg: "1.3fr 0.9fr" }} gap={6}>
           <Box>
             <VStack gap={4} align="stretch">
               {profileLoading ? (
