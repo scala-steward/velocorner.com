@@ -77,6 +77,46 @@ type ElevationSample = {
   elevation: number;
 };
 
+type ElevationBand = {
+  fill: string;
+  stroke: string;
+};
+
+const ELEVATION_PROFILE_LEGEND = [
+  { label: "Descent", color: "rgba(8, 145, 178, 0.75)" },
+  { label: "Flat", color: "rgba(5, 150, 105, 0.75)" },
+  { label: "Climb", color: "rgba(217, 119, 6, 0.75)" },
+  { label: "Steep", color: "rgba(220, 38, 38, 0.75)" },
+] as const;
+
+const getElevationBand = (grade: number): ElevationBand => {
+  if (grade <= -3) {
+    return {
+      fill: "rgba(14, 116, 144, 0.24)",
+      stroke: "rgba(8, 145, 178, 0.5)",
+    };
+  }
+
+  if (grade < 2) {
+    return {
+      fill: "rgba(16, 185, 129, 0.22)",
+      stroke: "rgba(5, 150, 105, 0.42)",
+    };
+  }
+
+  if (grade < 6) {
+    return {
+      fill: "rgba(245, 158, 11, 0.22)",
+      stroke: "rgba(217, 119, 6, 0.42)",
+    };
+  }
+
+  return {
+    fill: "rgba(239, 68, 68, 0.2)",
+    stroke: "rgba(220, 38, 38, 0.42)",
+  };
+};
+
 const SCENE_WIDTH = 860;
 const SCENE_HEIGHT = 520;
 const MAX_RENDER_POINTS = 180;
@@ -290,8 +330,20 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
   const baselineY = height - paddingBottom;
   const toX = (distance: number) => paddingX + (distance / maxDistance) * (width - paddingX * 2);
   const toY = (elevation: number) => paddingTop + ((maxElevation - elevation) / elevationSpan) * (height - paddingTop - paddingBottom);
+  const areaSegments = samples.slice(0, -1).map((sample, index) => {
+    const nextSample = samples[index + 1];
+    const x1 = toX(sample.distance);
+    const y1 = toY(sample.elevation);
+    const x2 = toX(nextSample.distance);
+    const y2 = toY(nextSample.elevation);
+    const grade = ((nextSample.elevation - sample.elevation) / Math.max(nextSample.distance - sample.distance, 1)) * 100;
+
+    return {
+      d: `M ${x1} ${baselineY} L ${x1} ${y1} L ${x2} ${y2} L ${x2} ${baselineY} Z`,
+      ...getElevationBand(grade),
+    };
+  });
   const line = samples.map((sample, index) => `${index === 0 ? "M" : "L"} ${toX(sample.distance)} ${toY(sample.elevation)}`).join(" ");
-  const area = `${line} L ${toX(maxDistance)} ${baselineY} L ${toX(0)} ${baselineY} Z`;
 
   return (
     <Box borderRadius="18px" p={2.5} bg="linear-gradient(180deg, rgba(12, 31, 46, 0.06), rgba(12, 31, 46, 0.02))" border="1px solid rgba(18, 38, 63, 0.06)">
@@ -305,12 +357,6 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
       </HStack>
       <Box borderRadius="14px" overflow="hidden" bg="linear-gradient(180deg, rgba(186, 230, 253, 0.28), rgba(255,255,255,0.76))">
         <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="110" role="img" aria-label="Elevation profile of the latest activity">
-          <defs>
-            <linearGradient id="activity-profile-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(59,130,246,0.42)" />
-              <stop offset="100%" stopColor="rgba(59,130,246,0.06)" />
-            </linearGradient>
-          </defs>
           {[0.25, 0.5, 0.75].map((ratio) => (
             <line
               key={ratio}
@@ -322,7 +368,9 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
               strokeDasharray="5 7"
             />
           ))}
-          <path d={area} fill="url(#activity-profile-fill)" />
+          {areaSegments.map((segment, index) => (
+            <path key={`${samples[index].distance}-${samples[index + 1].distance}`} d={segment.d} fill={segment.fill} stroke={segment.stroke} strokeWidth="1" />
+          ))}
           <path d={line} fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
           <path d={line} fill="none" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           <text x={paddingX} y={height - 6} fill="rgba(51,65,85,0.72)" fontSize="14">0</text>
@@ -331,6 +379,16 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
           </text>
         </svg>
       </Box>
+      <HStack gap={3} mt={1.5} flexWrap="wrap">
+        {ELEVATION_PROFILE_LEGEND.map((item) => (
+          <HStack key={item.label} gap={1.5} color="slate.500">
+            <Box boxSize="8px" borderRadius="full" bg={item.color} boxShadow={`0 0 0 1px ${item.color}`} />
+            <Text fontSize="10px" textTransform="uppercase" letterSpacing="0.12em">
+              {item.label}
+            </Text>
+          </HStack>
+        ))}
+      </HStack>
     </Box>
   );
 };

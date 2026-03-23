@@ -12,6 +12,47 @@ type DemoPoint = {
   y: number;
 };
 
+type ProfileSegment = {
+  d: string;
+  fill: string;
+  stroke: string;
+};
+
+const DEMO_PROFILE_LEGEND = [
+  { label: "Descent", color: "rgba(8, 145, 178, 0.75)" },
+  { label: "Flat", color: "rgba(5, 150, 105, 0.75)" },
+  { label: "Climb", color: "rgba(217, 119, 6, 0.75)" },
+  { label: "Steep", color: "rgba(220, 38, 38, 0.75)" },
+] as const;
+
+const getProfileGradientBand = (grade: number) => {
+  if (grade <= -3) {
+    return {
+      fill: "rgba(14, 116, 144, 0.24)",
+      stroke: "rgba(8, 145, 178, 0.5)",
+    };
+  }
+
+  if (grade < 2) {
+    return {
+      fill: "rgba(16, 185, 129, 0.22)",
+      stroke: "rgba(5, 150, 105, 0.42)",
+    };
+  }
+
+  if (grade < 6) {
+    return {
+      fill: "rgba(245, 158, 11, 0.22)",
+      stroke: "rgba(217, 119, 6, 0.42)",
+    };
+  }
+
+  return {
+    fill: "rgba(239, 68, 68, 0.2)",
+    stroke: "rgba(220, 38, 38, 0.42)",
+  };
+};
+
 const DEMO_TERRAIN_CONTROL_ROWS: DemoPoint[][] = [
   [
     { x: 82, y: 382 },
@@ -190,7 +231,16 @@ const demoSnowCaps = demoTerrainCells.filter((cell) => {
 });
 const demoRoutePath = toPointString(DEMO_ROUTE_POINTS);
 const demoProfileLinePath = DEMO_PROFILE_POINTS.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
-const demoProfileAreaPath = `${demoProfileLinePath} L 844 90 L 16 90 Z`;
+const demoProfileBaselineY = 90;
+const demoProfileSegments: ProfileSegment[] = DEMO_PROFILE_POINTS.slice(0, -1).map((point, index) => {
+  const nextPoint = DEMO_PROFILE_POINTS[index + 1];
+  const grade = ((point.y - nextPoint.y) / Math.max(nextPoint.x - point.x, 1)) * 10;
+
+  return {
+    d: `M ${point.x} ${demoProfileBaselineY} L ${point.x} ${point.y} L ${nextPoint.x} ${nextPoint.y} L ${nextPoint.x} ${demoProfileBaselineY} Z`,
+    ...getProfileGradientBand(grade),
+  };
+});
 
 const terrainStats = [
   { label: "Distance", valueMetric: "42.6 km", valueImperial: "26.5 mi", icon: LuRoute },
@@ -281,22 +331,28 @@ const DemoTerrainModelCard = ({ distanceLabel, elevationLabel }: DemoInsightCard
               </HStack>
               <Box borderRadius="14px" overflow="hidden" bg="linear-gradient(180deg, rgba(186, 230, 253, 0.28), rgba(255,255,255,0.76))">
                 <svg viewBox="0 0 860 110" width="100%" height="88" role="img" aria-label="Sample elevation profile">
-                  <defs>
-                    <linearGradient id="demo-elevation-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="rgba(59,130,246,0.42)" />
-                      <stop offset="100%" stopColor="rgba(59,130,246,0.06)" />
-                    </linearGradient>
-                  </defs>
                   {[31.5, 55, 78.5].map((y) => (
                     <line key={y} x1="16" x2="844" y1={y} y2={y} stroke="rgba(71,85,105,0.12)" strokeDasharray="5 7" />
                   ))}
-                  <path d={demoProfileAreaPath} fill="url(#demo-elevation-fill)" />
+                  {demoProfileSegments.map((segment, index) => (
+                    <path key={`${DEMO_PROFILE_POINTS[index].x}-${DEMO_PROFILE_POINTS[index + 1].x}`} d={segment.d} fill={segment.fill} stroke={segment.stroke} strokeWidth="1" />
+                  ))}
                   <path d={demoProfileLinePath} fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d={demoProfileLinePath} fill="none" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d={demoProfileLinePath} fill="none" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   <text x="16" y="104" fill="rgba(51,65,85,0.72)" fontSize="14">0</text>
                   <text x="844" y="104" textAnchor="end" fill="rgba(51,65,85,0.72)" fontSize="14">{distanceValue}</text>
                 </svg>
               </Box>
+              <HStack gap={3} mt={1.5} flexWrap="wrap">
+                {DEMO_PROFILE_LEGEND.map((item) => (
+                  <HStack key={item.label} gap={1.5} color="slate.500">
+                    <Box boxSize="8px" borderRadius="full" bg={item.color} boxShadow={`0 0 0 1px ${item.color}`} />
+                    <Text fontSize="10px" textTransform="uppercase" letterSpacing="0.12em">
+                      {item.label}
+                    </Text>
+                  </HStack>
+                ))}
+              </HStack>
             </Box>
           </VStack>
 
