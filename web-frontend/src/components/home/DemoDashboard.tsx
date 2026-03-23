@@ -6,6 +6,7 @@ import LineSeriesChart from "@/components/charts/LineSeriesChart";
 import CalendarHeatmap from "@/components/charts/CalendarHeatmap";
 import HeatmapChart from "@/components/charts/HeatmapChart";
 import { dashboardCardProps } from "./shared";
+import DemoInsightCards from "./DemoInsightCards";
 import { useCallback } from "react";
 import ApiClient from "@/service/ApiClient";
 
@@ -36,6 +37,8 @@ const HomeDemoDashboard = ({
           <LineSeriesChart title="Yearly Elevation (Sample)" unit={units.elevationLabel} fetchSeries={fetchDemoYearlyElevation} seriesToShow={5} height={350} />
         </Box>
       </Grid>
+
+      <DemoInsightCards distanceLabel={units.distanceLabel ?? 'km'} elevationLabel={units.elevationLabel ?? 'm'} />
 
       <Card.Root {...dashboardCardProps}>
         <Card.Body p={{ base: 4, md: 6 }}>
