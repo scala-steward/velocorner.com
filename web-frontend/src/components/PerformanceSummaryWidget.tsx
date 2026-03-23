@@ -283,38 +283,52 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
             </HStack>
           ) : (
             <VStack align="stretch" gap={4} fontSize="sm">
-              {parsedSummary?.trend?.label && parsedSummary?.trend.evidence && (
-                <Box
-                  p={4}
-                  borderRadius="2xl"
-                  bg={trendStyle.bg}
-                  border="1px solid"
-                  borderColor={trendStyle.borderColor}
+              {(parsedSummary?.trend?.evidence || strengths.length > 0 || recommendations.length > 0) && (
+                <Grid
+                  templateColumns={{
+                    base: "1fr",
+                    md: `repeat(${Math.min(
+                      [parsedSummary?.trend?.evidence, strengths.length > 0, recommendations.length > 0].filter(Boolean).length,
+                      3
+                    )}, minmax(0, 1fr))`
+                  }}
+                  gap={3}
                 >
-                  <VStack align="stretch" gap={2}>
-                    <HStack gap={3} flexWrap="wrap" justify="space-between">
-                      <Text fontSize="xs" fontWeight="bold" color={trendStyle.textColor} textTransform="uppercase" letterSpacing="0.08em">
-                        What changed
-                      </Text>
-                      <Badge
-                        colorPalette={trendColorPalette(parsedSummary.trend.label)}
-                        variant="solid"
-                        borderRadius="full"
-                        px={3}
-                        py={1}
-                      >
-                        {parsedSummary.trend.label}
-                      </Badge>
-                    </HStack>
-                    <Text color="slate.700" lineHeight="1.6">
-                      {parsedSummary.trend.evidence}
-                    </Text>
-                  </VStack>
-                </Box>
-              )}
+                  {parsedSummary?.trend?.label && parsedSummary?.trend.evidence ? (
+                    <Box
+                      p={4}
+                      borderRadius="2xl"
+                      bg={trendStyle.bg}
+                      border="1px solid"
+                      borderColor={trendStyle.borderColor}
+                    >
+                      <VStack align="stretch" gap={3}>
+                        <HStack gap={2} color={trendStyle.textColor} justify="space-between" align="center">
+                          <HStack gap={2} minW={0}>
+                            <LuGauge />
+                            <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="0.08em">
+                              What changed
+                            </Text>
+                          </HStack>
+                          <Badge
+                            alignSelf="start"
+                            colorPalette={trendColorPalette(parsedSummary.trend.label)}
+                            variant="solid"
+                            borderRadius="full"
+                            px={3}
+                            py={1}
+                            flexShrink={0}
+                          >
+                            {parsedSummary.trend.label}
+                          </Badge>
+                        </HStack>
+                        <Text color="slate.700" lineHeight="1.6">
+                          {parsedSummary.trend.evidence}
+                        </Text>
+                      </VStack>
+                    </Box>
+                  ) : null}
 
-              {(strengths.length > 0 || recommendations.length > 0) && (
-                <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={3}>
                   {strengths.length > 0 ? (
                     <Box p={4} borderRadius="2xl" bg="rgba(255,255,255,0.9)" border="1px solid" borderColor="rgba(15, 23, 42, 0.07)">
                       <VStack align="stretch" gap={3}>
@@ -334,24 +348,25 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                       </VStack>
                     </Box>
                   ) : null}
+
                   {recommendations.length > 0 ? (
                     <Box
                       p={4}
                       borderRadius="2xl"
                       bg="linear-gradient(180deg, rgba(236, 253, 245, 0.9), rgba(240, 253, 250, 0.72))"
-                        border="1px solid"
-                        borderColor="rgba(16, 185, 129, 0.14)"
-                      >
-                        <VStack align="stretch" gap={3}>
-                          <HStack gap={2} color="green.700">
-                            <LuTarget />
-                            <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="0.08em">
-                              Next best move
-                            </Text>
-                          </HStack>
-                          <VStack align="stretch" gap={2}>
-                            {recommendations.map((recommendation) => (
-                              <Box key={recommendation} px={3} py={2.5} borderRadius="xl" bg="rgba(255,255,255,0.7)">
+                      border="1px solid"
+                      borderColor="rgba(16, 185, 129, 0.14)"
+                    >
+                      <VStack align="stretch" gap={3}>
+                        <HStack gap={2} color="green.700">
+                          <LuTarget />
+                          <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="0.08em">
+                            Next best move
+                          </Text>
+                        </HStack>
+                        <VStack align="stretch" gap={2}>
+                          {recommendations.map((recommendation) => (
+                            <Box key={recommendation} px={3} py={2.5} borderRadius="xl" bg="rgba(255,255,255,0.7)">
                               <Text color="slate.700">{recommendation}</Text>
                             </Box>
                           ))}
