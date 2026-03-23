@@ -278,10 +278,10 @@ const getRouteDistance = (points: ActivityRoutePoint[]) => {
 
 const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; units: AthleteUnits }) => {
   const width = 860;
-  const height = 136;
-  const paddingX = 18;
-  const paddingTop = 14;
-  const paddingBottom = 24;
+  const height = 110;
+  const paddingX = 16;
+  const paddingTop = 12;
+  const paddingBottom = 20;
   const elevations = samples.map((sample) => sample.elevation);
   const minElevation = Math.min(...elevations);
   const maxElevation = Math.max(...elevations);
@@ -294,8 +294,8 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
   const area = `${line} L ${toX(maxDistance)} ${baselineY} L ${toX(0)} ${baselineY} Z`;
 
   return (
-    <Box borderRadius="22px" p={3} bg="linear-gradient(180deg, rgba(12, 31, 46, 0.06), rgba(12, 31, 46, 0.02))" border="1px solid rgba(18, 38, 63, 0.06)">
-      <HStack justify="space-between" mb={2}>
+    <Box borderRadius="18px" p={2.5} bg="linear-gradient(180deg, rgba(12, 31, 46, 0.06), rgba(12, 31, 46, 0.02))" border="1px solid rgba(18, 38, 63, 0.06)">
+      <HStack justify="space-between" mb={1.5}>
         <Text textTransform="uppercase" letterSpacing="0.16em" fontSize="xs" color="slate.500" fontWeight="semibold">
           Elevation profile
         </Text>
@@ -303,8 +303,8 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
           {formatElevation(maxElevation - minElevation, units)} relief
         </Text>
       </HStack>
-      <Box borderRadius="16px" overflow="hidden" bg="linear-gradient(180deg, rgba(186, 230, 253, 0.28), rgba(255,255,255,0.76))">
-        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="136" role="img" aria-label="Elevation profile of the latest activity">
+      <Box borderRadius="14px" overflow="hidden" bg="linear-gradient(180deg, rgba(186, 230, 253, 0.28), rgba(255,255,255,0.76))">
+        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="110" role="img" aria-label="Elevation profile of the latest activity">
           <defs>
             <linearGradient id="activity-profile-fill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="rgba(59,130,246,0.42)" />
@@ -323,10 +323,10 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
             />
           ))}
           <path d={area} fill="url(#activity-profile-fill)" />
-          <path d={line} fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-          <path d={line} fill="none" stroke="#0f766e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          <text x={paddingX} y={height - 8} fill="rgba(51,65,85,0.72)" fontSize="16">0</text>
-          <text x={width - paddingX} y={height - 8} textAnchor="end" fill="rgba(51,65,85,0.72)" fontSize="16">
+          <path d={line} fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={line} fill="none" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <text x={paddingX} y={height - 6} fill="rgba(51,65,85,0.72)" fontSize="14">0</text>
+          <text x={width - paddingX} y={height - 6} textAnchor="end" fill="rgba(51,65,85,0.72)" fontSize="14">
             {formatDistance(maxDistance, units)}
           </text>
         </svg>
@@ -339,10 +339,12 @@ const TerrainScene = ({
   route,
   terrain,
   units,
+  elevationSummary,
 }: {
   route: ActivityRoute;
   terrain: ActivityTerrain | null;
   units: AthleteUnits;
+  elevationSummary: { high: number; low: number } | null;
 }) => {
   const bounds = terrain?.bounds ?? deriveBoundsFromRoute(route.points);
   const routeElevations = route.points.map((point) => point.ele).filter((value): value is number => typeof value === "number");
@@ -360,12 +362,12 @@ const TerrainScene = ({
   const contourLevels = Array.from({ length: 6 }, (_, index) => minElevation + ((index + 1) / 7) * (maxElevation - minElevation || 1));
 
   return (
-    <VStack align="stretch" gap={3}>
+    <Grid templateColumns={{ base: "1fr", md: "minmax(0, 0.95fr) minmax(220px, 0.7fr)" }} gap={2.5} alignItems="stretch">
       <Box
-        borderRadius="28px"
+        borderRadius="24px"
         overflow="hidden"
         position="relative"
-        minH={{ base: "260px", md: "320px" }}
+        minH={{ base: "220px", md: "248px" }}
         bg="linear-gradient(180deg, #7cb0d0 0%, #dcecf3 28%, #6e8f6b 100%)"
         boxShadow="inset 0 1px 0 rgba(255,255,255,0.18)"
       >
@@ -375,13 +377,13 @@ const TerrainScene = ({
           bg="radial-gradient(circle at 18% 14%, rgba(255,255,255,0.42), transparent 26%), linear-gradient(180deg, rgba(255,255,255,0.08), transparent 42%)"
         />
 
-        <VStack position="absolute" top={{ base: 4, md: 5 }} left={{ base: 4, md: 5 }} align="start" gap={2} zIndex={2}>
-          <Badge colorPalette={terrain ? "green" : "orange"} borderRadius="full" px={3} py={1}>
+        <VStack position="absolute" top={{ base: 3, md: 4 }} left={{ base: 3, md: 4 }} align="start" gap={2} zIndex={2}>
+          <Badge colorPalette={terrain ? "green" : "orange"} borderRadius="full" px={2.5} py={0.5} fontSize="0.68rem">
             Terrain model
           </Badge>
         </VStack>
 
-        <Box position="absolute" inset={0} pt={{ base: 20, md: 16 }}>
+        <Box position="absolute" inset={0} pt={{ base: 16, md: 13 }}>
           <svg viewBox={`0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`} width="100%" height="100%" role="img" aria-label="3D terrain and route for the latest activity">
             <defs>
               <filter id="terrain-surface-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -414,20 +416,20 @@ const TerrainScene = ({
               />
             ) : null)}
 
-            <path d={routePath} fill="none" stroke="rgba(255,255,255,0.46)" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round" filter="url(#route-glow)" />
-            <path d={routePath} fill="none" stroke="#b91c1c" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-            <path d={routePath} fill="none" stroke="#fde68a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
+            <path d={routePath} fill="none" stroke="rgba(255,255,255,0.46)" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round" filter="url(#route-glow)" />
+            <path d={routePath} fill="none" stroke="#b91c1c" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={routePath} fill="none" stroke="#fde68a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
 
-            {start && <circle cx={start.x} cy={start.y} r="8" fill="#22c55e" stroke="#ecfeff" strokeWidth="4" />}
-            {finish && <circle cx={finish.x} cy={finish.y} r="9" fill="#f97316" stroke="#ffffff" strokeWidth="4" />}
+            {start && <circle cx={start.x} cy={start.y} r="7" fill="#22c55e" stroke="#ecfeff" strokeWidth="3.5" />}
+            {finish && <circle cx={finish.x} cy={finish.y} r="8" fill="#f97316" stroke="#ffffff" strokeWidth="3.5" />}
 
             {start && (
-              <text x={start.x - 8} y={start.y - 18} fill="rgba(248,250,252,0.96)" fontSize="17" fontWeight="700" textAnchor="end">
+              <text x={start.x - 8} y={start.y - 16} fill="rgba(248,250,252,0.96)" fontSize="15" fontWeight="700" textAnchor="end">
                 Start
               </text>
             )}
             {finish && (
-              <text x={finish.x + 12} y={finish.y - 18} fill="rgba(255,247,237,0.98)" fontSize="17" fontWeight="700">
+              <text x={finish.x + 10} y={finish.y - 16} fill="rgba(255,247,237,0.98)" fontSize="15" fontWeight="700">
                 Finish
               </text>
             )}
@@ -435,8 +437,30 @@ const TerrainScene = ({
         </Box>
       </Box>
 
-      {elevationSamples.length > 1 && <ElevationProfile samples={elevationSamples} units={units} />}
-    </VStack>
+      <VStack align="stretch" gap={2.5}>
+        {elevationSamples.length > 1 && <ElevationProfile samples={elevationSamples} units={units} />}
+
+        {elevationSummary && (
+          <Box borderRadius="18px" p={3} bg="rgba(18, 38, 63, 0.04)" border="1px solid rgba(18, 38, 63, 0.06)">
+            <Text fontSize="sm" color="slate.500" mb={1.5}>Terrain span</Text>
+            <HStack justify="space-between" gap={4} flexWrap="wrap">
+              <Box>
+                <Text fontSize="xs" color="slate.500">High point</Text>
+                <Text fontSize="md" fontWeight="bold" color="gray.900">
+                  {formatElevation(elevationSummary.high, units)}
+                </Text>
+              </Box>
+              <Box>
+                <Text fontSize="xs" color="slate.500">Low point</Text>
+                <Text fontSize="md" fontWeight="bold" color="gray.900">
+                  {formatElevation(elevationSummary.low, units)}
+                </Text>
+              </Box>
+            </HStack>
+          </Box>
+        )}
+      </VStack>
+    </Grid>
   );
 };
 
@@ -527,17 +551,17 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
 
   return (
     <Card.Root {...dashboardCardProps} overflow="hidden">
-      <Card.Body p={{ base: 5, md: 6 }}>
-        <Grid templateColumns={{ base: "1fr", xl: "minmax(0, 1.45fr) minmax(280px, 0.75fr)" }} gap={{ base: 5, md: 6 }} alignItems="stretch">
+      <Card.Body p={{ base: 4, md: 5 }}>
+        <Grid templateColumns={{ base: "1fr", xl: "minmax(0, 1.28fr) minmax(260px, 0.72fr)" }} gap={{ base: 4, md: 5 }} alignItems="stretch">
           {loading ? (
-            <HStack gap={3} minH="260px" justify="center" borderRadius="28px" bg="rgba(18, 38, 63, 0.04)">
+            <HStack gap={3} minH="220px" justify="center" borderRadius="24px" bg="rgba(18, 38, 63, 0.04)">
               <Spinner size="sm" />
               <Text color="slate.600">Building the terrain view of your latest activity...</Text>
             </HStack>
           ) : hasRoute && route ? (
-            <TerrainScene route={route} terrain={terrain} units={units} />
+            <TerrainScene route={route} terrain={terrain} units={units} elevationSummary={elevationSummary} />
           ) : (
-            <Box borderRadius="28px" p={{ base: 5, md: 6 }} bg="rgba(18, 38, 63, 0.04)" minH="260px">
+            <Box borderRadius="24px" p={{ base: 4, md: 5 }} bg="rgba(18, 38, 63, 0.04)" minH="220px">
               <Badge colorPalette="orange" borderRadius="full" px={3} py={1} mb={4}>
                 Terrain unavailable
               </Badge>
@@ -550,8 +574,8 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
             </Box>
           )}
 
-          <VStack align="stretch" gap={4} justify="space-between">
-            <VStack align="stretch" gap={3}>
+          <VStack align="stretch" gap={3} justify="space-between">
+            <VStack align="stretch" gap={2.5}>
               <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="slate.500" fontWeight="semibold">
                 Last Activity
               </Text>
@@ -563,51 +587,32 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
                 </HStack>
               ) : activity ? (
                 <>
-                  <Heading size="lg" color="gray.900">
+                  <Heading size="md" color="gray.900" lineHeight="1.2">
                     {activity.name}
                   </Heading>
-                  <Text color="slate.600">{formatDate(activity.start_date_local)}</Text>
+                  <Text color="slate.600" fontSize="sm">{formatDate(activity.start_date_local)}</Text>
 
-                  <Grid templateColumns={{ base: "1fr", sm: "repeat(2, minmax(0, 1fr))" }} gap={3}>
-                    <Box borderRadius="20px" p={4} bg="rgba(18, 38, 63, 0.04)">
-                      <HStack mb={2} color="slate.500">
+                  <Grid templateColumns={{ base: "1fr", sm: "repeat(2, minmax(0, 1fr))" }} gap={2.5}>
+                    <Box borderRadius="18px" p={3} bg="rgba(18, 38, 63, 0.04)">
+                      <HStack mb={1.5} color="slate.500">
                         <LuRoute />
                         <Text fontSize="sm">Distance</Text>
                       </HStack>
-                      <Text fontSize="xl" fontWeight="bold" color="gray.900">
+                      <Text fontSize="lg" fontWeight="bold" color="gray.900">
                         {formatDistance(activity.distance ?? routeDistance, units)}
                       </Text>
                     </Box>
 
-                    <Box borderRadius="20px" p={4} bg="rgba(18, 38, 63, 0.04)">
-                      <HStack mb={2} color="slate.500">
+                    <Box borderRadius="18px" p={3} bg="rgba(18, 38, 63, 0.04)">
+                      <HStack mb={1.5} color="slate.500">
                         <LuMountain />
                         <Text fontSize="sm">Elevation gain</Text>
                       </HStack>
-                      <Text fontSize="xl" fontWeight="bold" color="gray.900">
+                      <Text fontSize="lg" fontWeight="bold" color="gray.900">
                         {formatElevation(activity.total_elevation_gain, units)}
                       </Text>
                     </Box>
 
-                    {elevationSummary && (
-                      <Box borderRadius="20px" p={4} bg="rgba(18, 38, 63, 0.04)" gridColumn={{ base: "auto", sm: "1 / -1" }}>
-                        <Text fontSize="sm" color="slate.500" mb={2}>Terrain span</Text>
-                        <HStack justify="space-between" gap={4} flexWrap="wrap">
-                          <Box>
-                            <Text fontSize="xs" color="slate.500">High point</Text>
-                            <Text fontSize="lg" fontWeight="bold" color="gray.900">
-                              {formatElevation(elevationSummary.high, units)}
-                            </Text>
-                          </Box>
-                          <Box>
-                            <Text fontSize="xs" color="slate.500">Low point</Text>
-                            <Text fontSize="lg" fontWeight="bold" color="gray.900">
-                              {formatElevation(elevationSummary.low, units)}
-                            </Text>
-                          </Box>
-                        </HStack>
-                      </Box>
-                    )}
                   </Grid>
                 </>
               ) : (
