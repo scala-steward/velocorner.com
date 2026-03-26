@@ -206,6 +206,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
 
   return (
     <Card.Root
+      h="100%"
       borderRadius="28px"
       border="1px solid"
       borderColor="rgba(15, 23, 42, 0.07)"
@@ -213,12 +214,12 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
       boxShadow="0 20px 50px rgba(15, 23, 42, 0.08)"
       overflow="hidden"
     >
-      <Card.Body p={{ base: 4, md: 5 }}>
-        <VStack align="stretch" gap={4}>
+      <Card.Body p={{ base: 3.5, md: 4 }} h="100%">
+        <VStack align="stretch" gap={3} h="100%">
           <HStack justify="space-between" align="start" gap={4} flexWrap="wrap">
             <HStack gap={3} color="slate.800" align="center" flex="1 1 220px" minW={0}>
               <Box
-                p={2.5}
+                p={2}
                 borderRadius="2xl"
                 bg="linear-gradient(135deg, rgba(64, 210, 24, 0.2), rgba(115, 119, 116, 0.02))"
                 color="green.700"
@@ -244,20 +245,20 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                   return (
                     <Box
                       key={fact.label}
-                      p={3}
+                      p={2.5}
                       borderRadius="xl"
                       bg="rgba(255,255,255,0.88)"
                       border="1px solid"
                       borderColor="rgba(15, 23, 42, 0.07)"
                     >
-                      <VStack align="stretch" gap={1.5}>
+                      <VStack align="stretch" gap={1}>
                         <HStack gap={1.5} color="slate.500">
                           <FactIcon />
                           <Text fontSize="10px" fontWeight="bold" letterSpacing="0.08em" textTransform="uppercase">
                             {fact.label}
                           </Text>
                         </HStack>
-                        <Text fontSize="sm" fontWeight="semibold" color={fact.tone} lineHeight="1.35">
+                        <Text fontSize="xs" fontWeight="semibold" color={fact.tone} lineHeight="1.35">
                           {fact.value}
                         </Text>
                       </VStack>
@@ -279,7 +280,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
               <Text fontSize="sm" color="slate.600">Loading pulse...</Text>
             </HStack>
           ) : (
-            <VStack align="stretch" gap={4} fontSize="sm">
+            <VStack align="stretch" gap={3} fontSize="sm">
               {(parsedSummary?.trend?.evidence || strengths.length > 0 || recommendations.length > 0) && (
                 <Grid
                   templateColumns={{
@@ -289,17 +290,17 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                       3
                     )}, minmax(0, 1fr))`
                   }}
-                  gap={3}
+                  gap={2.5}
                 >
                   {parsedSummary?.trend?.label && parsedSummary?.trend.evidence ? (
                     <Box
-                      p={4}
+                      p={3}
                       borderRadius="2xl"
                       bg={trendStyle.bg}
                       border="1px solid"
                       borderColor={trendStyle.borderColor}
                     >
-                      <VStack align="stretch" gap={3}>
+                      <VStack align="stretch" gap={2}>
                         <HStack gap={2} color={trendStyle.textColor} justify="space-between" align="center">
                           <HStack gap={2} minW={0}>
                             <LuGauge />
@@ -319,7 +320,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                             {parsedSummary.trend.label}
                           </Badge>
                         </HStack>
-                        <Text color="slate.700" lineHeight="1.6">
+                        <Text color="slate.700" lineHeight="1.55" lineClamp={3}>
                           {parsedSummary.trend.evidence}
                         </Text>
                       </VStack>
@@ -327,18 +328,18 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                   ) : null}
 
                   {strengths.length > 0 ? (
-                    <Box p={4} borderRadius="2xl" bg="rgba(255,255,255,0.9)" border="1px solid" borderColor="rgba(15, 23, 42, 0.07)">
-                      <VStack align="stretch" gap={3}>
+                    <Box p={3} borderRadius="2xl" bg="rgba(255,255,255,0.9)" border="1px solid" borderColor="rgba(15, 23, 42, 0.07)">
+                      <VStack align="stretch" gap={2}>
                         <HStack gap={2} color="slate.600">
                           <LuCircleCheckBig />
                           <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="0.08em">
                             Strengths
                           </Text>
                         </HStack>
-                        <VStack align="stretch" gap={2}>
+                        <VStack align="stretch" gap={1.5}>
                           {strengths.map((strength) => (
-                            <Box key={strength} px={3} py={2.5} borderRadius="xl" bg="rgba(15, 23, 42, 0.03)">
-                              <Text color="slate.700">{strength}</Text>
+                            <Box key={strength} px={3} py={2} borderRadius="xl" bg="rgba(15, 23, 42, 0.03)">
+                              <Text color="slate.700" lineClamp={2}>{strength}</Text>
                             </Box>
                           ))}
                         </VStack>
@@ -348,23 +349,23 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
 
                   {recommendations.length > 0 ? (
                     <Box
-                      p={4}
+                      p={3}
                       borderRadius="2xl"
                       bg="linear-gradient(180deg, rgba(236, 253, 245, 0.9), rgba(240, 253, 250, 0.72))"
                       border="1px solid"
                       borderColor="rgba(16, 185, 129, 0.14)"
                     >
-                      <VStack align="stretch" gap={3}>
+                      <VStack align="stretch" gap={2}>
                         <HStack gap={2} color="green.700">
                           <LuTarget />
                           <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="0.08em">
                             Recommendations
                           </Text>
                         </HStack>
-                        <VStack align="stretch" gap={2}>
+                        <VStack align="stretch" gap={1.5}>
                           {recommendations.map((recommendation) => (
-                            <Box key={recommendation} px={3} py={2.5} borderRadius="xl" bg="rgba(255,255,255,0.7)">
-                              <Text color="slate.700">{recommendation}</Text>
+                            <Box key={recommendation} px={3} py={2} borderRadius="xl" bg="rgba(255,255,255,0.7)">
+                              <Text color="slate.700" lineClamp={2}>{recommendation}</Text>
                             </Box>
                           ))}
                         </VStack>
@@ -374,12 +375,12 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                 </Grid>
               )}
 
-              <Box px={4} py={4} borderRadius="2xl" bg="linear-gradient(180deg, rgba(250,245,255,0.9), rgba(243,232,255,0.72))">
+              <Box px={3.5} py={3} borderRadius="2xl" bg="linear-gradient(180deg, rgba(250,245,255,0.9), rgba(243,232,255,0.72))">
                 <VStack align="stretch" gap={2}>
                   <Text fontSize="xs" fontWeight="bold" color="purple.700" textTransform="uppercase" letterSpacing="0.08em">
                     Takeaway
                   </Text>
-                  <Text color={summaryText ? "purple.900" : "purple.700"} lineHeight="1.7">
+                  <Text color={summaryText ? "purple.900" : "purple.700"} lineHeight="1.6" lineClamp={4}>
                     {summaryText || "Your latest activities are still being analyzed."}
                   </Text>
                 </VStack>
