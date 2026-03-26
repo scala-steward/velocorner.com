@@ -36,7 +36,7 @@ const AnalyticsSection = ({
   return (
     <>
       <VStack gap={6} align="stretch" id="stats">
-        <Grid templateColumns={{ base: "1fr", xl: "1.6fr 0.8fr" }} gap={4} alignItems="stretch" hideBelow="md">
+        <Grid templateColumns={{ base: "1fr", xl: "1.72fr 0.72fr" }} gap={4} alignItems="stretch" hideBelow="md">
           <Box h="100%">
             {/* <ActivityStatsWidget
               selectedActivityType={selectedActivityType}

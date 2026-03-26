@@ -220,12 +220,12 @@ const AchievementsWidget = ({
 
   return (
     <Card.Root h="100%" borderRadius="28px">
-      <Card.Body p={{ base: 3, md: 4 }} h="100%">
+      <Card.Body p={{ base: 3, md: 3.5 }} h="100%">
 
-        <Heading size="sm" mb={3}>
+        <Heading size="sm" mb={2.5}>
           <Flex align="center" gap={2}>
             <Box
-              p={2.5}
+              p={2}
               borderRadius="2xl"
               bg="linear-gradient(135deg, rgba(64, 210, 24, 0.2), rgba(115, 119, 116, 0.02))"
               color="green.700"
@@ -244,7 +244,7 @@ const AchievementsWidget = ({
           </HStack>
         ) : achievements ? (
           visibleAchievements.length ? (
-            <SimpleGrid columns={{ base: 2, md: 4 }} gap={2}>
+            <SimpleGrid columns={{ base: 2, md: 2 }} gap={2}>
               {visibleAchievements.map((definition) => {
                 const achievement = achievements?.[definition.key];
                 const formatted = definition.formatter(achievement);
@@ -266,21 +266,21 @@ const AchievementsWidget = ({
                     positioning={{ placement: "top" }}
                   >
                     <Box
-                      p={2.5}
+                      p={2.25}
                       borderWidth="1px"
                       borderColor="gray.100"
                       borderRadius="lg"
                       bg="gray.50"
                     >
                       <VStack align="start" gap={0.5}>
-                        <Text fontSize="xs" color="gray.600" fontWeight="medium">
+                        <Text fontSize="10px" color="gray.600" fontWeight="medium" lineClamp={2}>
                           {definition.label}
                         </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.900">
+                        <Text fontSize="sm" fontWeight="bold" color="gray.900" lineHeight="1.2">
                           {valueWithUnit}
                         </Text>
                         {achievement?.activityName && (
-                          <Text fontSize="xs" color="gray.500" lineHeight="short">
+                          <Text fontSize="10px" color="gray.500" lineHeight="short" lineClamp={1}>
                             {stravaActivityUrl ? (
                               <Link
                                 href={stravaActivityUrl}
