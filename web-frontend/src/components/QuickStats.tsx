@@ -2,7 +2,7 @@ import ApiClient from '@/service/ApiClient';
 import type { AthleteUnits, UserStats } from '@/types/athlete';
 import { Box, Grid, Text, Icon, VStack, HStack } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import { LuActivity, LuTrendingUp, LuMountain, LuCalendar } from 'react-icons/lu';
+import { LuActivity, LuTrendingUp, LuMountain, LuClock3 } from 'react-icons/lu';
 
 interface QuickStatsProps {
   selectedActivityType: string;
@@ -15,9 +15,14 @@ const demoStats: UserStats = {
       rides: 218,
       distance: 18432,
       elevation: 98126,
-      days: 186,
+      movingTime: 1166400,
     },
   };
+
+const formatMovingHours = (seconds: number) => {
+  const hours = seconds / 3600;
+  return hours >= 100 ? Math.round(hours).toLocaleString() : hours.toFixed(1);
+};
 
 const QuickStats = ({ selectedActivityType, units, demo = false }: QuickStatsProps) => {
 
@@ -67,9 +72,10 @@ const QuickStats = ({ selectedActivityType, units, demo = false }: QuickStatsPro
       gradientTo: 'yellow.300',
     },
     {
-      icon: LuCalendar,
-      value: userStats?.progress?.days ?? 0,
-      label: 'Active Days',
+      icon: LuClock3,
+      value: userStats?.progress?.movingTime ?? 0,
+      label: 'Time',
+      unit: 'h',
       gradientFrom: 'green.500',
       gradientTo: 'green.200',
     },
@@ -130,7 +136,7 @@ const QuickStats = ({ selectedActivityType, units, demo = false }: QuickStatsPro
 
           <VStack alignItems="flex-start" gap={{ base: 0.5, md: 1 }} w="full">
             <Text fontSize={{ base: "lg", md: "xl" }} fontWeight="800" color="slate.900" lineHeight="1.1">
-              {formatWholeNumber(stat.value)}
+              {stat.label === 'Time' ? formatMovingHours(stat.value) : formatWholeNumber(stat.value)}
               {stat.unit && (
                 <Text as="span" fontSize={{ base: "xs", md: "sm" }} fontWeight="700" color="slate.500" ml={{ base: 1, md: 1.5 }}>
                   {stat.unit}
