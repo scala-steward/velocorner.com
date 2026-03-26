@@ -320,7 +320,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                             {parsedSummary.trend.label}
                           </Badge>
                         </HStack>
-                        <Text color="slate.700" lineHeight="1.55" lineClamp={3}>
+                        <Text color="slate.700" lineHeight="1.55">
                           {parsedSummary.trend.evidence}
                         </Text>
                       </VStack>
