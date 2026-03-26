@@ -11,13 +11,13 @@ interface QuickStatsProps {
 }
 
 const demoStats: UserStats = {
-  progress: {
-    rides: 218,
-    distance: 18432,
-    elevation: 98126,
-    days: 186,
-  },
-};
+    progress: {
+      rides: 218,
+      distance: 18432,
+      elevation: 98126,
+      days: 186,
+    },
+  };
 
 const QuickStats = ({ selectedActivityType, units, demo = false }: QuickStatsProps) => {
 

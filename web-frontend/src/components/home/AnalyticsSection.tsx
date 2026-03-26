@@ -40,11 +40,12 @@ const AnalyticsSection = ({
       <VStack gap={6} align="stretch" id="stats">
         <Grid templateColumns={{ base: "1fr", xl: "1.3fr 1fr" }} gap={4} alignItems="stretch" hideBelow="md">
           <Box h="100%">
-            <ActivityStatsWidget
+            {/* <ActivityStatsWidget
               selectedActivityType={selectedActivityType}
               isAuthenticated
               athleteProfile={athleteProfile}
-            />
+            /> */}
+            <PerformanceSummaryWidget isAuthenticated />
           </Box>
 
           <Box h="100%">
@@ -55,8 +56,6 @@ const AnalyticsSection = ({
             />
           </Box>
         </Grid>
-
-        <PerformanceSummaryWidget isAuthenticated />
 
         <LineSeriesChart title="Yearly Heatmap (Distance)" unit={units.distanceLabel} fetchSeries={fetchYearlyHeatmap} seriesToShow={2} height={400} />
 
