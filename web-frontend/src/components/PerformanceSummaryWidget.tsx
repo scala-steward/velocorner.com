@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Badge, Box, Card, Grid, Heading, HStack, Spinner, Text, VStack } from "@chakra-ui/react";
-import { LuCircleCheckBig, LuClock3, LuGauge, LuSparkles, LuTarget } from "react-icons/lu";
+import { LuCircleCheckBig, LuClock3, LuGauge, LuSparkles, LuTarget, LuTrendingUp } from "react-icons/lu";
 import ApiClient from "@/service/ApiClient";
 import type { AthletePerformanceSummary } from "@/types/athlete";
 
@@ -182,7 +182,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
       ? {
           label: "Trend",
           value: parsedSummary.trend.label,
-          icon: LuGauge,
+          icon: LuTrendingUp,
           tone: trendStyle.textColor
         }
       : null,
@@ -220,18 +220,15 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
               <Box
                 p={2.5}
                 borderRadius="2xl"
-                bg="linear-gradient(135deg, rgba(251,191,36,0.2), rgba(249,115,22,0.1))"
-                color="orange.700"
-                boxShadow="inset 0 0 0 1px rgba(249,115,22,0.12)"
+                bg="linear-gradient(135deg, rgba(64, 210, 24, 0.2), rgba(115, 119, 116, 0.02))"
+                color="green.700"
+                boxShadow="inset 0 0 0 1px rgba(94, 22, 249, 0.2)"
                 flexShrink={0}
               >
                 <LuSparkles />
               </Box>
               <VStack align="stretch" gap={0.5} minW={0}>
                 <Heading size="sm">Performance Pulse</Heading>
-                <Text fontSize="sm" color="slate.500" lineClamp={2}>
-                  Your form, focus areas, and next move at a glance.
-                </Text>
               </VStack>
             </HStack>
             {facts.length > 0 && (
@@ -307,7 +304,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                           <HStack gap={2} minW={0}>
                             <LuGauge />
                             <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="0.08em">
-                              What changed
+                              Trend
                             </Text>
                           </HStack>
                           <Badge
@@ -335,7 +332,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                         <HStack gap={2} color="slate.600">
                           <LuCircleCheckBig />
                           <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="0.08em">
-                            Keep leaning in
+                            Strengths
                           </Text>
                         </HStack>
                         <VStack align="stretch" gap={2}>
@@ -361,7 +358,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                         <HStack gap={2} color="green.700">
                           <LuTarget />
                           <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="0.08em">
-                            Next best move
+                            Recommendations
                           </Text>
                         </HStack>
                         <VStack align="stretch" gap={2}>

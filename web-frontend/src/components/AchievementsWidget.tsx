@@ -167,52 +167,52 @@ const AchievementsWidget = ({
     label: string;
     formatter: (entry?: AchievementEntry) => { value: string; unit?: string };
   }[] = [
-    {
-      key: "maxDistance",
-      label: "Longest Distance",
-      formatter: (entry) => formatDistanceValue(entry?.value),
-    },
-    {
-      key: "maxElevation",
-      label: "Maximum Elevation",
-      formatter: (entry) => formatElevationValue(entry?.value),
-    },
-    {
-      key: "maxTimeInSec",
-      label: "Longest Moving Time",
-      formatter: (entry) => ({ value: formatDurationValue(entry?.value) }),
-    },
-    {
-      key: "maxAverageSpeed",
-      label: "Fastest Average Speed",
-      formatter: (entry) => formatSpeedValue(entry?.value),
-    },
-    {
-      key: "maxAveragePower",
-      label: "Highest Average Power",
-      formatter: (entry) => formatPowerValue(entry?.value),
-    },
-    {
-      key: "maxHeartRate",
-      label: "Maximum Heart Rate",
-      formatter: (entry) => formatHeartRateValue(entry?.value),
-    },
-    {
-      key: "maxAverageHeartRate",
-      label: "Highest Average Heart Rate",
-      formatter: (entry) => formatHeartRateValue(entry?.value),
-    },
-    {
-      key: "maxAverageTemperature",
-      label: "Warmest Average Temperature",
-      formatter: (entry) => formatTemperatureValue(entry?.value),
-    },
-    // {
-    //   key: "minAverageTemperature",
-    //   label: "Coldest Average Temperature",
-    //   formatter: (entry) => formatTemperatureValue(entry?.value),
-    // },
-  ];
+      {
+        key: "maxDistance",
+        label: "Longest Distance",
+        formatter: (entry) => formatDistanceValue(entry?.value),
+      },
+      {
+        key: "maxElevation",
+        label: "Maximum Elevation",
+        formatter: (entry) => formatElevationValue(entry?.value),
+      },
+      {
+        key: "maxTimeInSec",
+        label: "Longest Moving Time",
+        formatter: (entry) => ({ value: formatDurationValue(entry?.value) }),
+      },
+      {
+        key: "maxAverageSpeed",
+        label: "Fastest Average Speed",
+        formatter: (entry) => formatSpeedValue(entry?.value),
+      },
+      {
+        key: "maxAveragePower",
+        label: "Highest Average Power",
+        formatter: (entry) => formatPowerValue(entry?.value),
+      },
+      {
+        key: "maxHeartRate",
+        label: "Maximum Heart Rate",
+        formatter: (entry) => formatHeartRateValue(entry?.value),
+      },
+      {
+        key: "maxAverageHeartRate",
+        label: "Highest Average Heart Rate",
+        formatter: (entry) => formatHeartRateValue(entry?.value),
+      },
+      {
+        key: "maxAverageTemperature",
+        label: "Warmest Average Temperature",
+        formatter: (entry) => formatTemperatureValue(entry?.value),
+      },
+      // {
+      //   key: "minAverageTemperature",
+      //   label: "Coldest Average Temperature",
+      //   formatter: (entry) => formatTemperatureValue(entry?.value),
+      // },
+    ];
 
   const visibleAchievements = achievements
     ? achievementDefinitions.filter((definition) => achievements?.[definition.key])
@@ -221,9 +221,20 @@ const AchievementsWidget = ({
   return (
     <Card.Root h="100%" borderRadius="28px">
       <Card.Body p={{ base: 3, md: 4 }} h="100%">
+
         <Heading size="sm" mb={3}>
           <Flex align="center" gap={2}>
-            <LuTrophy /> Best Achievements
+            <Box
+              p={2.5}
+              borderRadius="2xl"
+              bg="linear-gradient(135deg, rgba(64, 210, 24, 0.2), rgba(115, 119, 116, 0.02))"
+              color="green.700"
+              boxShadow="inset 0 0 0 1px rgba(94, 22, 249, 0.2)"
+              flexShrink={0}
+            >
+              <LuTrophy />
+            </Box>
+            Best Achievements
           </Flex>
         </Heading>
         {achievementsLoading ? (
