@@ -13,7 +13,7 @@ import {
 } from "@chakra-ui/react";
 import { LuExternalLink, LuMountain, LuRoute } from "react-icons/lu";
 import ApiClient from "@/service/ApiClient";
-import type { AthleteUnits } from "@/types/athlete";
+import type { AthleteClimbingInsights, AthleteUnits } from "@/types/athlete";
 import { dashboardCardProps } from "./shared";
 
 type LastActivity = {
@@ -22,6 +22,7 @@ type LastActivity = {
   distance?: number;
   total_elevation_gain?: number;
   start_date_local?: string;
+  elapsed_time?: number;
 };
 
 type ActivityRoutePoint = {
@@ -135,6 +136,63 @@ const formatElevation = (elevationMeters?: number, units?: AthleteUnits) => {
     return `${Math.round(value * 3.28084)} ft`;
   }
   return `${Math.round(value)} m`;
+};
+
+const formatHours = (seconds?: number) => {
+  const value = seconds ?? 0;
+  return `${(value / 3600).toFixed(value / 3600 >= 10 ? 0 : 1)} h`;
+};
+
+const formatElapsedTime = (seconds?: number) => {
+  const totalSeconds = Math.max(0, Math.round(seconds ?? 0));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+};
+
+const formatTrend = (value?: number) => {
+  if (typeof value !== "number" || Number.isNaN(value) || value === 0) return "Flat vs baseline";
+  return `${value > 0 ? "+" : ""}${value}% vs baseline`;
+};
+
+const formatDensity = (value?: number, units?: AthleteUnits) => {
+  const amount = value ?? 0;
+  if (units?.elevationLabel === "ft") {
+    return `${Math.round(amount)} ft / 100 mi`;
+  }
+  return `${Math.round(amount)} m / 100 km`;
+};
+
+const statusCopy = (insights?: AthleteClimbingInsights) => {
+  const climbDelta = insights?.recentClimbingDeltaPct ?? 0;
+  const rateDelta = insights?.recentClimbingRateDeltaPct ?? 0;
+
+  if (climbDelta >= 20 || rateDelta >= 15) {
+    return {
+      tone: "green" as const,
+      label: "Climbing up",
+      text: `Your last 4 weeks are ${Math.max(climbDelta, rateDelta)}% stronger than baseline on climbing load.`
+    };
+  }
+
+  if (climbDelta <= -15 || rateDelta <= -12) {
+    return {
+      tone: "orange" as const,
+      label: "Backed off",
+      text: `Recent climbing volume sits below your usual level, which can be a good recovery window.`
+    };
+  }
+
+  return {
+    tone: "blue" as const,
+    label: "Steady hills",
+    text: "Your climbing mix is tracking close to baseline with no major terrain shift."
+  };
 };
 
 const formatDate = (dateValue?: string) => {
@@ -346,8 +404,8 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
   const line = samples.map((sample, index) => `${index === 0 ? "M" : "L"} ${toX(sample.distance)} ${toY(sample.elevation)}`).join(" ");
 
   return (
-    <Box borderRadius="18px" p={2.5} bg="linear-gradient(180deg, rgba(12, 31, 46, 0.06), rgba(12, 31, 46, 0.02))" border="1px solid rgba(18, 38, 63, 0.06)">
-      <HStack justify="space-between" mb={1.5}>
+    <Box borderRadius="18px" p={{ base: 2.5, md: 2.25 }} bg="linear-gradient(180deg, rgba(12, 31, 46, 0.06), rgba(12, 31, 46, 0.02))" border="1px solid rgba(18, 38, 63, 0.06)">
+      <HStack justify="space-between" mb={1.25} mx = '0.5rem'>
         <Text textTransform="uppercase" letterSpacing="0.16em" fontSize="xs" color="slate.500" fontWeight="semibold">
           Elevation profile
         </Text>
@@ -379,7 +437,7 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
           </text>
         </svg>
       </Box>
-      <HStack gap={3} mt={1.5} flexWrap="wrap">
+      <HStack gap={2.5} mt={1.25} mx='0.5rem' flexWrap="wrap">
         {ELEVATION_PROFILE_LEGEND.map((item) => (
           <HStack key={item.label} gap={1.5} color="slate.500">
             <Box boxSize="8px" borderRadius="full" bg={item.color} boxShadow={`0 0 0 1px ${item.color}`} />
@@ -394,11 +452,13 @@ const ElevationProfile = ({ samples, units }: { samples: ElevationSample[]; unit
 };
 
 const TerrainScene = ({
+  activity,
   route,
   terrain,
   units,
   elevationSummary,
 }: {
+  activity: LastActivity | null;
   route: ActivityRoute;
   terrain: ActivityTerrain | null;
   units: AthleteUnits;
@@ -420,12 +480,12 @@ const TerrainScene = ({
   const contourLevels = Array.from({ length: 6 }, (_, index) => minElevation + ((index + 1) / 7) * (maxElevation - minElevation || 1));
 
   return (
-    <Grid templateColumns={{ base: "1fr", md: "minmax(0, 0.95fr) minmax(220px, 0.7fr)" }} gap={2.5} alignItems="stretch">
+    <Grid templateColumns={{ base: "1fr", md: "minmax(0, 0.9fr) minmax(260px, 0.74fr)" }} gap={2.5} alignItems="stretch">
       <Box
         borderRadius="24px"
         overflow="hidden"
         position="relative"
-        minH={{ base: "220px", md: "248px" }}
+        minH={{ base: "210px", md: "224px" }}
         bg="linear-gradient(180deg, #7cb0d0 0%, #dcecf3 28%, #6e8f6b 100%)"
         boxShadow="inset 0 1px 0 rgba(255,255,255,0.18)"
       >
@@ -435,13 +495,13 @@ const TerrainScene = ({
           bg="radial-gradient(circle at 18% 14%, rgba(255,255,255,0.42), transparent 26%), linear-gradient(180deg, rgba(255,255,255,0.08), transparent 42%)"
         />
 
-        <VStack position="absolute" top={{ base: 3, md: 4 }} left={{ base: 3, md: 4 }} align="start" gap={2} zIndex={2}>
+          <VStack position="absolute" top={{ base: 3, md: 3 }} left={{ base: 3, md: 3 }} align="start" gap={2} zIndex={2}>
           <Badge colorPalette={terrain ? "green" : "orange"} borderRadius="full" px={2.5} py={0.5} fontSize="0.68rem">
             Terrain model
           </Badge>
         </VStack>
 
-        <Box position="absolute" inset={0} pt={{ base: 16, md: 13 }}>
+        <Box position="absolute" inset={0} pt={{ base: 16, md: 11 }}>
           <svg viewBox={`0 0 ${SCENE_WIDTH} ${SCENE_HEIGHT}`} width="100%" height="100%" role="img" aria-label="3D terrain and route for the latest activity">
             <defs>
               <filter id="terrain-surface-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -495,28 +555,99 @@ const TerrainScene = ({
         </Box>
       </Box>
 
-      <VStack align="stretch" gap={2.5}>
+      <VStack align="stretch" gap={{ base: 2.5, md: 2 }} h="100%">
+        {activity ? (
+          <Box borderRadius="18px" p={{ base: 3, md: 2.5 }} bg="rgba(255,255,255,0.82)" border="1px solid rgba(18, 38, 63, 0.06)">
+            <VStack align="stretch" gap={{ base: 2.5, md: 2 }}>
+              <VStack align="stretch" gap={1}>
+                <HStack justify="space-between" align="start" gap={3}>
+                  {activity?.id ? (
+                    <Link
+                      href={`https://www.strava.com/activities/${activity.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      color="blue.500"
+                      width="fit-content"
+                      _hover={{ color: "blue.600", textDecoration: "none" }}
+                    >
+                      <HStack gap={1.5} align="center">
+                        <Text textTransform="uppercase" letterSpacing="0.16em" fontSize="xs" fontWeight="semibold">
+                          Last Activity
+                        </Text>
+                        <LuExternalLink size={12} />
+                      </HStack>
+                    </Link>
+                  ) : (
+                    <Text textTransform="uppercase" letterSpacing="0.16em" fontSize="xs" color="slate.500" fontWeight="semibold">
+                      Last Activity
+                    </Text>
+                  )}
+                  <Text color="slate.600" fontSize="sm" textAlign="right" flexShrink={0}>
+                    {formatDate(activity.start_date_local)}
+                  </Text>
+                </HStack>
+                <Heading size="md" color="gray.900" lineHeight="1.25">
+                  {activity.name}
+                </Heading>
+              </VStack>
+
+              <Grid templateColumns="repeat(3, minmax(0, 1fr))" gap={{ base: 2.5, md: 2 }}>
+                <Box borderRadius="16px" p={{ base: 2.5, md: 2.25 }} bg="rgba(18, 38, 63, 0.04)">
+                  <HStack mx='0.5rem' mb={1} color="slate.500">
+                    <LuRoute />
+                    <Text fontSize="sm">Distance</Text>
+                  </HStack>
+                  <Text mx='0.5rem' fontSize="md" fontWeight="bold" color="gray.900">
+                    {formatDistance(activity.distance, units)}
+                  </Text>
+                </Box>
+
+                <Box borderRadius="16px" p={{ base: 2.5, md: 2.25 }} bg="rgba(18, 38, 63, 0.04)">
+                  <HStack mx='0.5rem' mb={1} color="slate.500">
+                    <LuMountain />
+                    <Text fontSize="sm">Elevation</Text>
+                  </HStack>
+                  <Text mx='0.5rem' fontSize="md" fontWeight="bold" color="gray.900">
+                    {formatElevation(activity.total_elevation_gain, units)}
+                  </Text>
+                </Box>
+
+                <Box borderRadius="16px" p={{ base: 2.5, md: 2.25 }} bg="rgba(18, 38, 63, 0.04)">
+                  <HStack mx='0.5rem' mb={1} color="slate.500">
+                    <Text fontSize="sm">Time</Text>
+                  </HStack>
+                  <Text mx='0.5rem' fontSize="md" fontWeight="bold" color="gray.900">
+                    {formatElapsedTime(activity.elapsed_time)}
+                  </Text>
+                </Box>
+              </Grid>
+            </VStack>
+          </Box>
+        ) : null}
+
         {elevationSamples.length > 1 && <ElevationProfile samples={elevationSamples} units={units} />}
 
-        {elevationSummary && (
-          <Box borderRadius="18px" p={3} bg="rgba(18, 38, 63, 0.04)" border="1px solid rgba(18, 38, 63, 0.06)">
-            <Text fontSize="sm" color="slate.500" mb={1.5}>Terrain span</Text>
-            <HStack justify="space-between" gap={4} flexWrap="wrap">
-              <Box>
-                <Text fontSize="xs" color="slate.500">High point</Text>
-                <Text fontSize="md" fontWeight="bold" color="gray.900">
-                  {formatElevation(elevationSummary.high, units)}
-                </Text>
-              </Box>
-              <Box>
-                <Text fontSize="xs" color="slate.500">Low point</Text>
-                <Text fontSize="md" fontWeight="bold" color="gray.900">
-                  {formatElevation(elevationSummary.low, units)}
-                </Text>
-              </Box>
-            </HStack>
-          </Box>
-        )}
+        <Box mt="auto">
+          {elevationSummary && (
+            <Box borderRadius="18px" p={{ base: 3, md: 2.5 }} bg="rgba(18, 38, 63, 0.04)" border="1px solid rgba(18, 38, 63, 0.06)">
+              <Text fontSize="xs" textAlign='center' color="slate.500" mb={1.25}>Terrain span</Text>
+              <HStack justify="space-between" gap={4} flexWrap="wrap">
+                <Box>
+                  <Text fontSize="xs" color="slate.500">High point</Text>
+                  <Text fontSize="md" fontWeight="bold" color="gray.900">
+                    {formatElevation(elevationSummary.high, units)}
+                  </Text>
+                </Box>
+                <Box>
+                  <Text fontSize="xs" color="slate.500">Low point</Text>
+                  <Text fontSize="md" fontWeight="bold" color="gray.900">
+                    {formatElevation(elevationSummary.low, units)}
+                  </Text>
+                </Box>
+              </HStack>
+            </Box>
+          )}
+        </Box>
       </VStack>
     </Grid>
   );
@@ -524,12 +655,14 @@ const TerrainScene = ({
 
 interface LastActivityRoute3DProps {
   units: AthleteUnits;
+  selectedActivityType: string;
 }
 
-const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
+const LastActivityRoute3D = ({ units, selectedActivityType }: LastActivityRoute3DProps) => {
   const [activity, setActivity] = useState<LastActivity | null>(null);
   const [route, setRoute] = useState<ActivityRoute | null>(null);
   const [terrain, setTerrain] = useState<ActivityTerrain | null>(null);
+  const [climbingInsights, setClimbingInsights] = useState<AthleteClimbingInsights | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -539,9 +672,16 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
     const fetchLastActivity = async () => {
       try {
         setLoading(true);
-        const data = await ApiClient.lastActivity();
+        const [data, climbingData] = await Promise.all([
+          ApiClient.lastActivity(),
+          ApiClient.climbingInsights(selectedActivityType).catch((insightsError) => {
+            console.error("Error fetching climbing insights:", insightsError);
+            return null;
+          }),
+        ]);
         if (!active) return;
         setActivity(data ?? null);
+        setClimbingInsights(climbingData ?? null);
 
         if (data?.id) {
           try {
@@ -576,6 +716,7 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
         setActivity(null);
         setRoute(null);
         setTerrain(null);
+        setClimbingInsights(null);
         setError("Latest activity route is currently unavailable.");
       } finally {
         if (active) {
@@ -589,7 +730,7 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [selectedActivityType]);
 
   const elevationSummary = useMemo(() => {
     const terrainElevations = terrain?.points.map((point) => point.ele).filter((value): value is number => typeof value === "number") ?? [];
@@ -606,18 +747,41 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
 
   const routeDistance = useMemo(() => (route ? getRouteDistance(route.points) : 0), [route]);
   const hasRoute = Boolean(route?.points?.length && route.points.length > 1);
+  const climbStatus = statusCopy(climbingInsights || undefined);
+  const climbingMetrics = [
+    {
+      label: "4-week climbing",
+      value: `${formatElevation(climbingInsights?.rolling4Weeks?.elevation, units)} • ${climbingInsights?.rolling4Weeks?.rides ?? 0} rides`,
+      helper: `${formatTrend(climbingInsights?.recentClimbingDeltaPct)}`,
+    },
+    {
+      label: "Elevation / hour",
+      value: `${formatElevation(climbingInsights?.rolling4Weeks?.elevationPerHour, units)}/h`,
+      helper: formatTrend(climbingInsights?.recentClimbingRateDeltaPct),
+    },
+    {
+      label: "Elevation density",
+      value: formatDensity(climbingInsights?.rolling4Weeks?.elevationPer100Km, units),
+      helper: formatTrend(climbingInsights?.recentDensityDeltaPct),
+    },
+    {
+      label: "Climbiness score",
+      value: `${climbingInsights?.rolling4Weeks?.climbinessScore ?? 0}/100`,
+      helper: `Baseline ${climbingInsights?.baseline4Weeks?.climbinessScore ?? 0}/100`,
+    },
+  ];
 
   return (
     <Card.Root {...dashboardCardProps} overflow="hidden">
       <Card.Body p={{ base: 4, md: 5 }}>
-        <Grid templateColumns={{ base: "1fr", xl: "minmax(0, 1.28fr) minmax(260px, 0.72fr)" }} gap={{ base: 4, md: 5 }} alignItems="stretch">
+        <Grid templateColumns={{ base: "1fr", xl: "minmax(0, 1.44fr) minmax(240px, 0.56fr)" }} gap={{ base: 4, md: 5 }} alignItems="stretch">
           {loading ? (
             <HStack gap={3} minH="220px" justify="center" borderRadius="24px" bg="rgba(18, 38, 63, 0.04)">
               <Spinner size="sm" />
               <Text color="slate.600">Building the terrain view of your latest activity...</Text>
             </HStack>
           ) : hasRoute && route ? (
-            <TerrainScene route={route} terrain={terrain} units={units} elevationSummary={elevationSummary} />
+            <TerrainScene activity={activity} route={route} terrain={terrain} units={units} elevationSummary={elevationSummary} />
           ) : (
             <Box borderRadius="24px" p={{ base: 4, md: 5 }} bg="rgba(18, 38, 63, 0.04)" minH="220px">
               <Badge colorPalette="orange" borderRadius="full" px={3} py={1} mb={4}>
@@ -632,12 +796,8 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
             </Box>
           )}
 
-          <VStack align="stretch" gap={3} justify="space-between">
-            <VStack align="stretch" gap={2.5}>
-              <Text textTransform="uppercase" letterSpacing="0.18em" fontSize="xs" color="slate.500" fontWeight="semibold">
-                Last Activity
-              </Text>
-
+          <VStack align="stretch" gap={3} justify="space-between" h="100%">
+            <VStack align="stretch" gap={2.5} flex="1" justify="flex-start">
               {loading ? (
                 <HStack gap={3} minH="140px">
                   <Spinner size="sm" />
@@ -645,33 +805,37 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
                 </HStack>
               ) : activity ? (
                 <>
-                  <Heading size="md" color="gray.900" lineHeight="1.2">
-                    {activity.name}
-                  </Heading>
-                  <Text color="slate.600" fontSize="sm">{formatDate(activity.start_date_local)}</Text>
+                  <Box
+                    borderRadius="20px"
+                    p={3.5}
+                    bg="linear-gradient(135deg, rgba(14,116,144,0.08), rgba(15,118,110,0.08))"
+                    border="1px solid rgba(14,116,144,0.12)"
+                  >
+                    <VStack align="stretch" gap={2}>
+                      <HStack justify="space-between" align="start" gap={3}>
+                        <Text textTransform="uppercase" letterSpacing="0.12em" fontSize="10px" color="teal.700" fontWeight="bold">
+                          {selectedActivityType} climbing pulse
+                        </Text>
+                        <Badge colorPalette={climbStatus.tone} borderRadius="full" px={2.5} py={0.5} flexShrink={0}>
+                          {climbStatus.label}
+                        </Badge>
+                      </HStack>
+                      <Text fontSize="sm" color="slate.700" lineHeight="1.6">
+                        {climbStatus.text}
+                      </Text>
+                    </VStack>
+                  </Box>
 
                   <Grid templateColumns={{ base: "1fr", sm: "repeat(2, minmax(0, 1fr))" }} gap={2.5}>
-                    <Box borderRadius="18px" p={3} bg="rgba(18, 38, 63, 0.04)">
-                      <HStack mb={1.5} color="slate.500">
-                        <LuRoute />
-                        <Text fontSize="sm">Distance</Text>
-                      </HStack>
-                      <Text fontSize="lg" fontWeight="bold" color="gray.900">
-                        {formatDistance(activity.distance ?? routeDistance, units)}
-                      </Text>
-                    </Box>
-
-                    <Box borderRadius="18px" p={3} bg="rgba(18, 38, 63, 0.04)">
-                      <HStack mb={1.5} color="slate.500">
-                        <LuMountain />
-                        <Text fontSize="sm">Elevation gain</Text>
-                      </HStack>
-                      <Text fontSize="lg" fontWeight="bold" color="gray.900">
-                        {formatElevation(activity.total_elevation_gain, units)}
-                      </Text>
-                    </Box>
-
+                    {climbingMetrics.map((metric) => (
+                      <Box key={metric.label} borderRadius="18px" p={3} bg="rgba(18, 38, 63, 0.04)">
+                        <Text fontSize="xs" color="slate.500" mb={1}>{metric.label}</Text>
+                        <Text fontSize="md" fontWeight="bold" color="gray.900">{metric.value}</Text>
+                        <Text fontSize="xs" color="slate.500" mt={1.5} lineHeight="1.5">{metric.helper}</Text>
+                      </Box>
+                    ))}
                   </Grid>
+
                 </>
               ) : (
                 <Box borderRadius="20px" p={4} bg="rgba(18, 38, 63, 0.04)">
@@ -680,28 +844,22 @@ const LastActivityRoute3D = ({ units }: LastActivityRoute3DProps) => {
               )}
             </VStack>
 
-            <VStack align="stretch" gap={4}>
-              {terrain && (
-                <Text fontSize="xs" color="slate.600">
-                  DEM resolution: {terrain.rows} x {terrain.cols}
-                </Text>
-              )}
-
-              {activity && (
-                <Link
-                  href={`https://www.strava.com/activities/${activity.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  color="blue.600"
-                  fontWeight="semibold"
-                >
-                  <HStack gap={2}>
-                    <Text>Open on Strava</Text>
-                    <LuExternalLink />
-                  </HStack>
-                </Link>
-              )}
-            </VStack>
+            {climbingInsights?.rolling4Weeks ? (
+              <HStack justify="space-between" gap={4} flexWrap="wrap" borderRadius="18px" p={3} bg="rgba(255,255,255,0.7)" border="1px solid rgba(18, 38, 63, 0.06)" mt="auto">
+                <Box>
+                  <Text fontSize="xs" color="slate.500">Rolling block</Text>
+                  <Text fontSize="sm" fontWeight="semibold" color="slate.800">
+                    {formatHours(climbingInsights.rolling4Weeks.movingTime)} • {formatDistance((climbingInsights.rolling4Weeks.distance ?? 0) * (units.distanceLabel === "mi" ? 1609.344 : 1000), units)}
+                  </Text>
+                </Box>
+                <Box>
+                  <Text fontSize="xs" color="slate.500">Baseline climbing</Text>
+                  <Text fontSize="sm" fontWeight="semibold" color="slate.800">
+                    {formatElevation(climbingInsights.baseline4Weeks?.elevation, units)}
+                  </Text>
+                </Box>
+              </HStack>
+            ) : null}
           </VStack>
         </Grid>
       </Card.Body>

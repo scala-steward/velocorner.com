@@ -100,3 +100,21 @@ export type AthletePerformanceSummary = {
   basedOn?: string;
   createdAt?: string;
 };
+
+export type ClimbingWindow = {
+  rides?: number;
+  distance?: number;
+  elevation?: number;
+  movingTime?: number;
+  elevationPerHour?: number;
+  elevationPer100Km?: number;
+  climbinessScore?: number;
+};
+
+export type AthleteClimbingInsights = {
+  rolling4Weeks?: ClimbingWindow;
+  baseline4Weeks?: ClimbingWindow;
+  recentClimbingDeltaPct?: number;
+  recentClimbingRateDeltaPct?: number;
+  recentDensityDeltaPct?: number;
+};

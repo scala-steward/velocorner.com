@@ -248,7 +248,7 @@ const Home = () => {
               onSearchKeyPress={handleSearchKeyPress}
             />
 
-            <LastActivityRoute3D units={profileUnits} />
+            <LastActivityRoute3D units={profileUnits} selectedActivityType={selectedActivityType} />
 
             <AnalyticsSection
               selectedActivityType={selectedActivityType}

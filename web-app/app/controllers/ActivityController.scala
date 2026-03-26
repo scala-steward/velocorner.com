@@ -13,7 +13,7 @@ import velocorner.api.chart.DailyPoint
 import velocorner.api.{ActivityRoute, ActivityTerrain}
 import velocorner.api.strava.Activity
 import velocorner.api.wordcloud.WordCloud
-import velocorner.api.{Account, Achievements, AthletePerformance, ProfileStatistics, Progress, Units}
+import velocorner.api.{Account, Achievements, AthletePerformance, ClimbingInsights, ProfileStatistics, Progress, Units}
 import velocorner.model._
 import velocorner.util.{JsonIo, Metrics}
 
@@ -205,6 +205,22 @@ class ActivityController @Inject() (
           achievementsF.map(JsonIo.write[Achievements](_)).map(Ok(_))
         }
         .getOrElse(Future(Unauthorized))
+    }
+
+  // climbing-focused 4-week summary and baseline for the selected activity type
+  // route mapped to /api/athletes/statistics/climbing/:activity
+  def climbing(activity: String): Action[AnyContent] =
+    TimedAuthAsyncAction(s"query for climbing insights in $activity")(parse.default) { implicit request =>
+      val storage = connectivity.getStorage
+      val result = for {
+        account <- OptionT[Future, Account](Future(loggedIn))
+        activities <- OptionT.liftF(storage.listAllActivities(account.athleteId, activity))
+      } yield ClimbingInsights.from(activities, LocalDate.now(), account.units())
+
+      result
+        .getOrElse(ClimbingInsights.empty.to(Units.Metric))
+        .map(Json.toJson(_))
+        .map(Ok(_))
     }
 
   // AI generated performance summary based on the most recent activities

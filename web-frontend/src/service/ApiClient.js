@@ -87,6 +87,7 @@ const endpoints = {
   yearlyHistogram: (action, activity) => get(`/api/athletes/statistics/histogram/${action}/${activity}`),
   topActivities: (action, activity) => get(`/api/athletes/statistics/top/${action}/${activity}`),
   achievements: (activity) => get(`/api/athletes/statistics/achievements/${activity}`),
+  climbingInsights: (activity) => get(`/api/athletes/statistics/climbing/${activity}`),
   performanceSummary: () => get('/api/athletes/statistics/performance'),
   
   // Athlete profile

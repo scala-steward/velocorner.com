@@ -270,6 +270,16 @@ GET     /api/athletes/statistics/top/:action/:activity           controllers.Act
 GET     /api/athletes/statistics/achievements/:activity    controllers.ActivityController.achievements(activity: String)
 
 ###
+#  summary: Retrieves rolling climbing insights for the logged in athlete
+#  tags:
+#    - activity
+#  responses:
+#    200:
+#      description: Returns recent climbing summary and baseline deltas
+###
+GET     /api/athletes/statistics/climbing/:activity        controllers.ActivityController.climbing(activity: String)
+
+###
 #  summary: Retrieves AI generated performance evaluation for the logged in athlete
 #  tags:
 #    - activity

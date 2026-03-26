@@ -96,7 +96,7 @@ const ActivityStatsWidget = ({ selectedActivityType, isAuthenticated, athletePro
       <Card.Body h="100%">
         <VStack align="stretch" gap={4} h="100%">
           <HStack justify="space-between" align="center">
-            <Heading size="md">Your Statistics</Heading>
+            <Heading size="md">Yearly Statistics</Heading>
             <HStack gap={2}>
               <Select.Root
                 collection={yearCollection}
