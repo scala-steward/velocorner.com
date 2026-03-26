@@ -1,4 +1,4 @@
-import { Box, Card, Grid, Image, VStack } from "@chakra-ui/react";
+import { Box, Card, Grid, VStack } from "@chakra-ui/react";
 import ActivityStatsWidget from "@/components/ActivityStatsWidget";
 import AchievementsWidget from "@/components/AchievementsWidget";
 import PerformanceSummaryWidget from "@/components/PerformanceSummaryWidget";
@@ -35,8 +35,6 @@ const AnalyticsSection = ({
   const fetchDailyDistance = useCallback(() => ApiClient.dailyStatistics("distance"), []);
   return (
     <>
-      <Image alignSelf="flex-end" width="169px" height="31px" src="/images/powered-by-strava1.png" alt="Powered by Strava" />
-
       <VStack gap={6} align="stretch" id="stats">
         <Grid templateColumns={{ base: "1fr", xl: "1.3fr 1fr" }} gap={4} alignItems="stretch" hideBelow="md">
           <Box h="100%">

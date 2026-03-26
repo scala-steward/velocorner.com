@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Card, Progress, Text, VStack } from "@chakra-ui/react";
+import { Box, Card, Progress, Text, VStack, Image } from "@chakra-ui/react";
 import ApiClient from "@/service/ApiClient";
 import { useAuth } from "@/service/auth";
 import { toaster } from "@/components/ui/toaster";
@@ -222,6 +222,8 @@ const Home = () => {
 
         {isAuthenticated && (
           <>
+            <Image alignSelf="flex-end" width="169px" height="31px" src="/images/powered-by-strava1.png" alt="Powered by Strava" />
+
             <ActivityTypeSelector
               activityTypes={activityTypes}
               selectedActivityType={selectedActivityType}
