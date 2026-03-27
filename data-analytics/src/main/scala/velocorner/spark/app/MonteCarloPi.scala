@@ -3,12 +3,14 @@ package velocorner.spark.app
 import org.apache.spark.SparkContext
 import velocorner.spark.LocalSpark
 
-object MonteCarloPi extends App with LocalSpark[Double] {
+object MonteCarloPi extends LocalSpark[Double] {
 
   val samples = 2000000
 
-  val pi = runSpark()
-  println(s"π ~ $pi")
+  def main(args: Array[String]): Unit = {
+    val pi = runSpark()
+    println(s"π ~ $pi")
+  }
 
   override def sparkAppName: String = s"Approximate π ${math.Pi}"
 

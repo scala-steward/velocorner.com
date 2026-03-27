@@ -8,20 +8,22 @@ import velocorner.model.strava.Club
 import velocorner.storage.Storage
 import velocorner.util.CloseableResource
 
-object ClubActivitiesFromStravaToStorageApp extends App with LazyLogging with CloseableResource with AwaitSupport with MyLocalConfig {
+object ClubActivitiesFromStravaToStorageApp extends LazyLogging with CloseableResource with AwaitSupport with MyLocalConfig {
 
-  logger.info("initializing...")
-  withCloseable(new StravaActivityFeed(None, SecretConfig.load())) { feed =>
-    val storage = Storage.create("co")
-    storage.initialize()
+  def main(args: Array[String]): Unit = {
+    logger.info("initializing...")
+    withCloseable(new StravaActivityFeed(None, SecretConfig.load())) { feed =>
+      val storage = Storage.create("co")
+      storage.initialize()
 
-    logger.info("retrieving...")
-    val activities = awaitOn(feed.listRecentClubActivities(Club.velocornerId))
-    logger.info("storing...")
-    awaitOn(storage.storeActivity(activities))
-    logger.info("done...")
+      logger.info("retrieving...")
+      val activities = awaitOn(feed.listRecentClubActivities(Club.velocornerId))
+      logger.info("storing...")
+      awaitOn(storage.storeActivity(activities))
+      logger.info("done...")
 
-    storage.destroy()
+      storage.destroy()
+    }
+    HttpFeed.shutdown()
   }
-  HttpFeed.shutdown()
 }

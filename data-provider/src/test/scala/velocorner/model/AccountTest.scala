@@ -41,12 +41,12 @@ class AccountTest extends AnyWordSpec with Matchers with AccountFixtures {
     }
 
     "query status" in {
-      account.isAdmin() mustBe false
-      account.isImperial() mustBe true
+      account.isAdmin mustBe false
+      account.isImperial mustBe true
 
       val root = account.copy(role = Role.Admin.some, unit = Units.Metric.some)
-      root.isAdmin() mustBe true
-      root.isImperial() mustBe false
+      root.isAdmin mustBe true
+      root.isImperial mustBe false
     }
   }
 }

@@ -4,11 +4,13 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import velocorner.spark.LocalSpark
 
-object TopNWord extends App with LocalSpark[Seq[(String, Int)]] {
+object TopNWord extends LocalSpark[Seq[(String, Int)]] {
 
   val n = 20
 
-  runSpark()
+  def main(args: Array[String]): Unit = {
+    runSpark()
+  }
 
   override def sparkAppName: String = s"Top $n Words"
 
@@ -19,7 +21,7 @@ object TopNWord extends App with LocalSpark[Seq[(String, Int)]] {
       .flatMap(line => line.split("""\W+"""))
       .map(word => (word, 1))
       .reduceByKey(_ + _)
-      .takeOrdered(n)(Ordering[Int].reverse.on(_._2))
+      .takeOrdered(n)(using Ordering.by[(String, Int), Int](_._2).reverse)
       .toSeq
   }
 }

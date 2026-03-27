@@ -66,15 +66,14 @@ case class Progress(
     longestElevation = this.longestElevation
   )
 
-  def factor[T: Numeric: FromDouble](v: T, f: Double): T = v.toDouble * f
+  def factor[T: {Numeric, FromDouble}](v: T, f: Double): T = summon[FromDouble[T]](v.toDouble * f)
 
   def to(unit: Units.Entry): Progress = unit match {
-    case Units.Imperial => this.toImperial()
+    case Units.Imperial => this.toImperial
     case Units.Metric   => this
-    case other          => throw new IllegalArgumentException(s"unknown unit $other")
   }
 
-  private def toImperial(): Progress = Progress(
+  private def toImperial: Progress = Progress(
     days = this.days,
     rides = this.rides,
     distance = Kilometers(this.distance).toInternationalMiles,

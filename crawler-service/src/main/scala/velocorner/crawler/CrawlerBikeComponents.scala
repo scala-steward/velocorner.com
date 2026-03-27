@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 
 object CrawlerBikeComponents {
 
-  val baseUrl = BikeComponents.url.stripSuffix("/")
+  val baseUrl: String = BikeComponents.url.stripSuffix("/")
 
   // the BC specific request and responses
   case class SuggestImage(path: String, mimeType: String)
@@ -53,7 +53,7 @@ object CrawlerBikeComponents {
   }
 
   case class SuggestResponse(term: String, suggestions: Suggest) {
-    def toApi(): List[ProductDetails] = suggestions.products
+    def toApi: List[ProductDetails] = suggestions.products
       .map { p =>
         ProductDetails(
           market = BikeComponents,
@@ -69,7 +69,7 @@ object CrawlerBikeComponents {
           onStock = p.isBuyable.getOrElse(true)
         )
       }
-      .sortBy(_.onStock)(Ordering[Boolean].reverse) // products on stock are ranked first
+      .sortBy(product => !product.onStock) // products on stock are ranked first
   }
   object SuggestResponse {
     implicit val codec: Codec[SuggestResponse] = deriveCodec
@@ -99,6 +99,6 @@ class CrawlerBikeComponents[F[_]: Async](client: Client[F]) extends Crawler[F] w
     val request = Method.GET(uri)
     for {
       res <- client.expect[SuggestResponse](request)
-    } yield res.toApi().take(limit)
+    } yield res.toApi.take(limit)
   }
 }

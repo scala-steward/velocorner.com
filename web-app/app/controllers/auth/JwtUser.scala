@@ -22,7 +22,7 @@ object JwtUser {
   def fromToken(token: String)(implicit secret: String): JwtUser =
     JwtJson.decode(token, secret, Seq(JwtAlgorithm.HS256), JwtOptions(expiration = true)) match {
       case Success(claim) =>
-        if (!claim.isValid(issuer)(Clock.systemUTC())) throw new SecurityException("token expired")
+        if (!claim.isValid(issuer)(using Clock.systemUTC())) throw new SecurityException("token expired")
 
         val json = Json.parse(claim.content)
         (json \ "user").get.validate[JwtUser] match {

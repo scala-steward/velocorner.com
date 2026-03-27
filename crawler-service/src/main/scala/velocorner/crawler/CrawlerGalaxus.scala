@@ -8,7 +8,7 @@ import org.http4s.circe.CirceEntityCodec.circeEntityDecoder
 import org.http4s.{Header, Headers, Method}
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
-import org.http4s.implicits.http4sLiteralsSyntax
+import org.http4s.syntax.literals.uri
 import org.typelevel.ci.CIString
 import velocorner.api.Money
 import velocorner.api.brand.Marketplace.Galaxus
@@ -19,7 +19,7 @@ import java.net.URLEncoder
 
 object CrawlerGalaxus {
 
-  val baseUrl = Galaxus.url.stripSuffix("/")
+  val baseUrl: String = Galaxus.url.stripSuffix("/")
 
   case class GalaxusImage(url: String)
 
@@ -77,8 +77,8 @@ object CrawlerGalaxus {
 
   case class SearchResponse(data: Data) {
 
-    def convert(s: String): String = s.toLowerCase.replace(' ', '-')
-    def toApi(): List[ProductDetails] = data.search.products.results.map { res =>
+    private def convert(s: String): String = s.toLowerCase.replace(' ', '-')
+    def toApi: List[ProductDetails] = data.search.products.results.map { res =>
       val p = res.product
       ProductDetails(
         market = Galaxus,
@@ -147,6 +147,6 @@ class CrawlerGalaxus[F[_]: Async](client: Client[F]) extends Crawler[F] with Htt
     val request = Method.POST(payload(searchTerm, limit), uri, headers)
     for {
       res <- client.expect[List[SearchResponse]](request)
-    } yield res.flatMap(_.toApi())
+    } yield res.flatMap(_.toApi)
   }
 }

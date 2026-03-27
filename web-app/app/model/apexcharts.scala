@@ -7,7 +7,7 @@ import velocorner.api.strava.Activity
 
 object apexcharts {
 
-  val metricElevationRange = List(
+  private val metricElevationRange = List(
     HeatmapPoint("0-300m", 300),
     HeatmapPoint("300-600m", 600),
     HeatmapPoint("600-1000m", 1000),
@@ -15,7 +15,7 @@ object apexcharts {
     HeatmapPoint("1500-2000m", 2000),
     HeatmapPoint("2000+ m", 3000)
   )
-  val imperialElevationRange = List(
+  private val imperialElevationRange = List(
     HeatmapPoint("0-1000ft", 1000),
     HeatmapPoint("1000-1500ft", 1500),
     HeatmapPoint("1500-3000ft", 3000),
@@ -23,7 +23,7 @@ object apexcharts {
     HeatmapPoint("4500-6000ft", 6000),
     HeatmapPoint("6000+ ft", 9000)
   )
-  val metricRideDistanceRange = List(
+  private val metricRideDistanceRange = List(
     HeatmapPoint("0-10km", 10),
     HeatmapPoint("10-50km", 50),
     HeatmapPoint("50-100km", 100),
@@ -31,7 +31,7 @@ object apexcharts {
     HeatmapPoint("150-200km", 200),
     HeatmapPoint("200+ km", 250)
   )
-  val imperialRideDistanceRange = List(
+  private val imperialRideDistanceRange = List(
     HeatmapPoint("0-5mi", 5),
     HeatmapPoint("5-20mi", 20),
     HeatmapPoint("20-50mi", 50),
@@ -39,14 +39,14 @@ object apexcharts {
     HeatmapPoint("80-100mi", 100),
     HeatmapPoint("100+ mi", 150)
   )
-  val metricDistanceRange = List(
+  private val metricDistanceRange = List(
     HeatmapPoint("0-3km", 3),
     HeatmapPoint("3-5km", 5),
     HeatmapPoint("5-10km", 10),
     HeatmapPoint("10-15km", 15),
     HeatmapPoint("15+ km", 20)
   )
-  val imperialDistanceRange = List(
+  private val imperialDistanceRange = List(
     HeatmapPoint("0-2mi", 2),
     HeatmapPoint("2-5mi", 5),
     HeatmapPoint("5-8mi", 8),
@@ -56,8 +56,8 @@ object apexcharts {
 
   def toDistanceHeatmap(items: Iterable[Activity], activityType: String, unit: Units.Entry): List[HeatmapSeries] = {
     val (ranges, converter) = (activityType, unit) match {
-      case ("Ride", Units.Metric)   => (metricRideDistanceRange, identity[Long] _)
-      case (_, Units.Metric)        => (metricDistanceRange, identity[Long] _)
+      case ("Ride", Units.Metric)   => (metricRideDistanceRange, identity[Long])
+      case (_, Units.Metric)        => (metricDistanceRange, identity[Long])
       case ("Ride", Units.Imperial) => (imperialRideDistanceRange, (d: Long) => Kilometers(d).toInternationalMiles.toLong)
       case (_, Units.Imperial)      => (imperialDistanceRange, (d: Long) => Kilometers(d).toInternationalMiles.toLong)
     }
@@ -66,7 +66,7 @@ object apexcharts {
 
   def toElevationHeatmap(items: Iterable[Activity], unit: Units.Entry): List[HeatmapSeries] = {
     val (ranges, converter) = unit match {
-      case Units.Metric => (metricElevationRange, identity[Long] _)
+      case Units.Metric => (metricElevationRange, identity[Long])
       case _            => (imperialElevationRange, (d: Long) => Meters(d).toFeet.toLong)
     }
     toYearlyHeatmap(items, (a: Activity) => converter(a.total_elevation_gain.toLong), ranges)
@@ -74,7 +74,7 @@ object apexcharts {
 
   // must return a list because of the swagger spec generator
   private[model] def toYearlyHeatmap(items: Iterable[Activity], fun: Activity => Long, ranges: List[HeatmapPoint]): List[HeatmapSeries] = {
-    val year2Values = items.groupMap(_.getStartDateLocal().year().get())(fun)
+    val year2Values = items.groupMap(_.getStartDateLocal.year().get())(fun)
     toYearlyHeatmap(year2Values, ranges)
   }
 

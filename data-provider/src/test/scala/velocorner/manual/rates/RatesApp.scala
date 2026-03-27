@@ -12,11 +12,11 @@ object RatesApp extends IOApp.Simple with MyLocalConfig {
     config <- IO.delay(SecretConfig.load())
     provider <- IO(new ExchangeRatesFeed(config))
     mc <- IO.fromFuture(IO(provider.moneyContext())) // USD is the base currency
-    res1 = USD(10).to(CHF)(mc) // direct conversion
+    res1 = USD(10).to(CHF)(using mc) // direct conversion
     _ <- IO.println(s"direct conversion is $res1")
-    res2 = EUR(10).to(HUF)(mc) // indirect conversion
+    res2 = EUR(10).to(HUF)(using mc) // indirect conversion
     _ <- IO.println(s"indirect conversion is $res2")
-    res3 = CHF(10).to(CHF)(mc) // identity conversion
+    res3 = CHF(10).to(CHF)(using mc) // identity conversion
     _ <- IO.println(s"identity conversion is $res3")
     _ <- IO.delay(provider.close())
     _ <- IO.delay(HttpFeed.shutdown())

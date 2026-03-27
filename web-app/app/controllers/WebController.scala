@@ -61,7 +61,11 @@ class WebController @Inject() (
     Redirect("https://leventes-initial-project-936798.webflow.io/")
   }
 
-  def sitemap = Action { _ =>
+  def swaggerSpec = Action {
+    Redirect("/assets/swagger.json")
+  }
+
+  def sitemap = Action { (_: Request[AnyContent]) =>
     val buildTime = java.time.LocalDate.parse(BuildInfo.buildTime, java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME)
     val lastmod = buildTime.format(java.time.format.DateTimeFormatter.ISO_DATE)
     val xml: Elem =

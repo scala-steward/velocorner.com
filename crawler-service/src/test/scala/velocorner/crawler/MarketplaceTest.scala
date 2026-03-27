@@ -10,11 +10,11 @@ import velocorner.api.brand.Marketplace.VeloFactory
 class MarketplaceTest extends AnyFlatSpec with should.Matchers with DecodeResource {
 
   "bikecomponents api response" should "be converted" in {
-    assert[CrawlerBikeComponents.SuggestResponse]("/bikecomponents/suggest3.json").toApi().size shouldBe 4
+    assert[CrawlerBikeComponents.SuggestResponse]("/bikecomponents/suggest3.json").toApi.size shouldBe 4
   }
 
   "galaxus api response" should "be converted" in {
-    assert[List[CrawlerGalaxus.SearchResponse]]("/galaxus/search.json").flatMap(_.toApi()).size shouldBe 10
+    assert[List[CrawlerGalaxus.SearchResponse]]("/galaxus/search.json").flatMap(_.toApi).size shouldBe 10
   }
 
   "chainreactioncycles page response" should "be converted" in {
@@ -36,7 +36,7 @@ class MarketplaceTest extends AnyFlatSpec with should.Matchers with DecodeResour
   }
 
   "velofactory api response" should "be converted" in {
-    val items = assert[CrawlerVeloFactory.SearchResponse]("/velofactory/search.json").toApi()
+    val items = assert[CrawlerVeloFactory.SearchResponse]("/velofactory/search.json").toApi
     items.size shouldBe 30
     items.head shouldBe ProductDetails(
       market = VeloFactory,
@@ -55,7 +55,7 @@ class MarketplaceTest extends AnyFlatSpec with should.Matchers with DecodeResour
   }
 
   "velofactory api response" should "be converted without price and stock availability" in {
-    val items = assert[CrawlerVeloFactory.SearchResponse]("/velofactory/search_no_price.json").toApi()
+    val items = assert[CrawlerVeloFactory.SearchResponse]("/velofactory/search_no_price.json").toApi
     items.size shouldBe 29 // has a brand item type filtered out
     items.map(_.onStock).take(13).distinct should contain theSameElementsAs List(true) // ordered by 'in stock' first
   }

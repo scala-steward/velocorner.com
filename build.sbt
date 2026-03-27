@@ -31,7 +31,6 @@ val psqlDbClient = Seq(
 
 val playJson = "org.playframework" %% "play-json" % Dependencies.playJsonVersion
 // for more than 22 parameter case classes
-val playJsonExtensions = ("ai.x" %% "play-json-extensions" % "0.42.0").excludeAll("com.typesafe.play")
 val playJsonJoda = "org.playframework" %% "play-json-joda" % Dependencies.playJsonVersion
 val playWsAhcStandalone = "org.playframework" %% "play-ahc-ws-standalone" % Dependencies.playWsVersion
 val playWsJsonStandalone = "org.playframework" %% "play-ws-standalone-json" % Dependencies.playWsVersion
@@ -48,7 +47,8 @@ val apacheCommons = Seq(
   "org.apache.commons" % "commons-csv" % "1.14.1"
 )
 
-val playTest = "org.scalatestplus" %% "mockito-3-2" % "3.1.2.0" % "test"
+def scala3UsesScala213(module: ModuleID): ModuleID = module.cross(CrossVersion.for3Use2_13)
+
 val playTestPlus = "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % "test"
 val mockito = "org.mockito" % "mockito-core" % Dependencies.mockitoVersion % "test"
 val scalaTest = "org.scalatest" %% "scalatest" % Dependencies.scalaTestVersion % "test"
@@ -78,11 +78,17 @@ def squants = Seq(
 )
 
 def spark = Seq(
-  "org.apache.spark" %% "spark-mllib" % Dependencies.sparkVersion excludeAll "com.google.inject"
+  scala3UsesScala213(
+    ("org.apache.spark" %% "spark-mllib" % Dependencies.sparkVersion)
+      .excludeAll("com.google.inject")
+      .exclude("org.scala-lang.modules", "scala-xml_2.13")
+      .exclude("org.scala-lang.modules", "scala-parser-combinators_2.13")
+      .exclude("org.typelevel", "cats-kernel_2.13")
+  )
 )
 
 def smile: Seq[ModuleID] = Seq(
-  "com.github.haifengl" % "smile-core" % "5.2.1"
+  "com.github.haifengl" % "smile-core" % "5.2.2"
 )
 
 def http4s: Seq[ModuleID] = Seq(
@@ -102,14 +108,12 @@ def circe: Seq[ModuleID] = Seq(
   "io.circe" %% "circe-core",
   "io.circe" %% "circe-parser",
   "io.circe" %% "circe-generic"
-).map(_ % Dependencies.circeVersion) ++ Seq(
-  "io.circe" %% "circe-generic-extras" % "0.14.4"
-)
+).map(_ % Dependencies.circeVersion)
 
 def scalacache = Seq(
   "com.github.cb372" %% "scalacache-core",
   "com.github.cb372" %% "scalacache-guava"
-).map(_ % Dependencies.scalacacheVersion)
+).map(module => scala3UsesScala213(module % Dependencies.scalacacheVersion))
 
 lazy val buildSettings = Defaults.coreDefaultSettings ++ Seq(
   version := (ThisBuild / version).value,
@@ -117,9 +121,14 @@ lazy val buildSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "velocorner",
   description := "The Cycling Platform",
   javacOptions ++= Seq("-source", "17", "-target", "17"),
-  scalacOptions := Seq("-deprecation", "-feature", "-unchecked", "-encoding", "utf8"),
+  scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-encoding", "utf8"),
+  scalacOptions ++= {
+    if (scalaBinaryVersion.value == "3") Seq("-source:3.8-migration") else Seq.empty
+  },
   versionScheme := Some("early-semver"),
-  Test / scalacOptions ++= Seq("-Yrangepos"),
+  Test / scalacOptions ++= {
+    if (scalaBinaryVersion.value == "2.13") Seq("-Yrangepos") else Seq.empty
+  },
   ThisBuild / resolvers ++= Seq(
     "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"
   ),
@@ -139,6 +148,9 @@ lazy val buildSettings = Defaults.coreDefaultSettings ++ Seq(
   dependencyUpdatesFilter -= moduleFilter(organization = "com.google.inject", name = "guice")
 )
 
+Global / excludeLintKeys += webApp / bomFileName
+ThisBuild / useSuperShell := false
+
 lazy val dataProvider = (project in file("data-provider") withId "data-provider")
   .settings(
     buildSettings,
@@ -146,7 +158,6 @@ lazy val dataProvider = (project in file("data-provider") withId "data-provider"
     description := "from storage and API feeds",
     libraryDependencies ++= Seq(
       playJson,
-      playJsonExtensions,
       playJsonJoda,
       playWsAhcStandalone,
       "com.beachape" %% "enumeratum" % "1.9.6",
@@ -194,8 +205,11 @@ lazy val crawlerService = (project in file("crawler-service") withId "crawler-se
         val oldStrategy = (assembly / assemblyMergeStrategy).value
         oldStrategy(x)
     },
-    // implicit0, withFilter, final map
-    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
+    libraryDependencies ++= {
+      if (scalaBinaryVersion.value == "2.13")
+        Seq(compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"))
+      else Seq.empty
+    }
   )
   .dependsOn(dataProvider % "test->test;compile->compile")
   .enablePlugins(
@@ -217,13 +231,14 @@ lazy val webApp = (project in file("web-app") withId "web-app")
   .settings(
     buildSettings,
     name := "web-app",
+    swaggerV3 := true,
+    swaggerDomainNameSpaces := Seq("velocorner.api"),
     libraryDependencies ++= Seq(
       guice,
       ehcache,
       playWsJsonStandalone,
       "com.github.jwt-scala" %% "jwt-play-json" % Dependencies.jwtVersion,
       "com.google.inject" % "guice" % "5.1.0", // for Java 11 support, do not bump!!!
-      playTest,
       playTestPlus,
       mockito,
       scalaTest
@@ -237,9 +252,6 @@ lazy val webApp = (project in file("web-app") withId "web-app")
     ).value,
     buildInfoPackage := "velocorner.build",
     Universal / javaOptions ++= Seq("-Dplay.server.pidfile.path=/dev/null", "-Duser.timezone=UTC"),
-    swaggerDomainNameSpaces := Seq("velocorner.api"),
-    swaggerPrettyJson := true,
-    swaggerV3 := true,
     assembly / test := {},
     assembly / assemblyJarName := "web-app-all.jar",
     assembly / mainClass := Some("play.core.server.ProdServerStart"),
@@ -272,8 +284,8 @@ lazy val webApp = (project in file("web-app") withId "web-app")
   )
   .enablePlugins(
     play.sbt.PlayScala,
+    SwaggerPlugin,
     BuildInfoPlugin,
-    com.iheart.sbtPlaySwagger.SwaggerPlugin,
     ScalafmtExtensionPlugin
   )
   .enablePlugins(PlayLogback)

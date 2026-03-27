@@ -45,8 +45,8 @@ class ActivitySpec extends AnyWordSpec with Matchers {
       val activity = JsonIo.readReadFromResource[Activity]("/data/strava/no_start_date_local.json")
       activity.id === 126199417L
       activity.upload_id === Some(138177658L)
-      activity.getStartDateLocal().getYear === 2014
-      activity.getStartDateLocal().getHourOfDay === 13
+      activity.getStartDateLocal.getYear === 2014
+      activity.getStartDateLocal.getHourOfDay === 13
     }
 
   }

@@ -14,11 +14,11 @@
     "react": "^19.2.4",
     "react-apexcharts": "^2.1.0",
     "react-dom": "^19.2.4",
-    "react-ga4": "2.1.0",
+    "react-ga4": "3.0.1",
     "react-icons": "^5.6.0",
     "react-router-dom": "^7.13.2",
     "super-tiny-icons": "^0.6.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.1"
   },
   "scripts": {
     "clean": "rm -Rf node_modules/ dist/",
@@ -38,10 +38,10 @@
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.2.0",
-    "@vitest/ui": "^4.1.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/ui": "^4.1.2",
     "jsdom": "^27.0.1",
-    "vite": "^7.3.1",
+    "vite": "^8.0.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.15"
   },

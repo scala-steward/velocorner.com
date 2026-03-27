@@ -17,7 +17,7 @@ object DailyProgress {
         activity.total_elevation_gain,
         activity.total_elevation_gain
     )
-    DailyProgress(activity.getStartDateLocal().toLocalDate, progress)
+    DailyProgress(activity.getStartDateLocal.toLocalDate, progress)
   }
 
   def from(activities: Iterable[Activity]): Iterable[DailyProgress] =

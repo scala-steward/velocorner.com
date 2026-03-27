@@ -23,12 +23,12 @@ object ClimbingInsights {
   )
 
   def from(activities: Iterable[Activity], now: LocalDate, unit: Units.Entry): ClimbingInsights = {
-    val filtered = activities.filter(activity => !activity.getStartDateLocal().toLocalDate.isAfter(now)).toSeq
+    val filtered = activities.filter(activity => !activity.getStartDateLocal.toLocalDate.isAfter(now)).toSeq
     if (filtered.isEmpty) return empty.to(unit)
 
     val currentWeekStart = weekStart(now)
     val weekStarts = (VisibleWeeks - 1 to 0 by -1).map(offset => currentWeekStart.minusWeeks(offset))
-    val byWeek = filtered.groupBy(activity => weekStart(activity.getStartDateLocal().toLocalDate))
+    val byWeek = filtered.groupBy(activity => weekStart(activity.getStartDateLocal.toLocalDate))
     val weekly = weekStarts.map(start => ClimbingWindow.from(byWeek.getOrElse(start, Seq.empty)))
     val recent = weekly.takeRight(RecentWeeks).foldLeft(ClimbingWindow.zero)(_ + _)
     val baselineWeekly = weekly.dropRight(RecentWeeks)
@@ -76,7 +76,7 @@ case class ClimbingWindow(
     rides = (rides.toDouble * factor).round.toInt,
     distance = distance * factor,
     elevation = elevation * factor,
-    movingTime = (movingTime.toDouble * factor).round.toLong
+    movingTime = (movingTime * factor).round
   )
 
   def to(unit: Units.Entry): ClimbingWindow = unit match {
@@ -88,7 +88,6 @@ case class ClimbingWindow(
         movingTime = movingTime
       ).copy(climbinessScore = climbinessScore)
     case Units.Metric => this
-    case other        => throw new IllegalArgumentException(s"unknown unit $other")
   }
 }
 

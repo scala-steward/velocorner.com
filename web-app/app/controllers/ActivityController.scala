@@ -54,7 +54,7 @@ class ActivityController @Inject() (
         account <- OptionT[Future, Account](Future(loggedIn))
         _ = logger.info(s"athletes' $activity profile for ${account.displayName}")
         activities <- OptionT.liftF(storage.listYtdActivities(account.athleteId, activity, year.toInt))
-        ytdActivities = activities.filter(_.getStartDateLocal().toLocalDate.compareTo(ytd) <= 0)
+        ytdActivities = activities.filter(_.getStartDateLocal.toLocalDate.compareTo(ytd) <= 0)
         _ = logger.debug(s"found ${ytdActivities.size} activities in $year for ${account.athleteId}")
         ytdCommutes = ytdActivities.filter(_.commute.getOrElse(false))
       } yield ProfileStatistics.from(

@@ -34,7 +34,7 @@ object CrawlerVeloFactory {
   }
 
   case class SearchResponse(results: List[VeloFactoryProduct]) {
-    def toApi(): List[ProductDetails] = results
+    def toApi: List[ProductDetails] = results
       .map { p =>
         ProductDetails(
           market = VeloFactory,
@@ -50,11 +50,11 @@ object CrawlerVeloFactory {
           onStock = p.availability.equalsIgnoreCase("in stock")
         )
       }
-      .sortBy(_.onStock)(Ordering[Boolean].reverse) // products on stock are ranked first
+      .sortBy(product => !product.onStock) // products on stock are ranked first
   }
 
   object SearchResponse {
-    implicit val codec: Decoder[SearchResponse] = Decoder[SearchResponse] { res =>
+    implicit val codec: Decoder[SearchResponse] = Decoder.instance { res =>
       for {
         // filter "type" : "product" only, otherwise brands and other types will appear in the list
         productsOnly <- res.downField("results").focus match {
@@ -103,6 +103,6 @@ class CrawlerVeloFactory[F[_]: Async](client: Client[F]) extends Crawler[F] with
     val req = Method.GET(Uri.unsafeFromString(uri), headers)
     for {
       res <- client.expect[SearchResponse](req)
-    } yield res.toApi().take(limit)
+    } yield res.toApi.take(limit)
   }
 }

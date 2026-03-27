@@ -1,4 +1,4 @@
-FROM cimg/openjdk:17.0.11
+FROM cimg/openjdk:25.0.1
 
 LABEL maintainer="velocorner.com@gmail.com"
 
@@ -6,7 +6,7 @@ ENV SHELL="/bin/bash"
 ENV LANG="C.UTF-8"
 ENV SBT_OPTS="-Dfile.encoding=UTF-8"
 ENV SBT_HOME="/opt/sbt"
-ENV SBT_VERSION="1.12.5"
+ENV SBT_VERSION="1.12.8"
 
 USER root
 # install sbt

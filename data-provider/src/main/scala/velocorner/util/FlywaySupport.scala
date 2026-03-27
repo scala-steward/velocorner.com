@@ -9,7 +9,7 @@ import scala.jdk.CollectionConverters.EnumerationHasAsScala
 
 trait FlywaySupport {
 
-  lazy val config = SecretConfig.load()
+  lazy val config: SecretConfig = SecretConfig.load()
 
   def testPsqlDb(port: Int): PsqlDbStorage = FlywaySupport.copyInTemp("psql/migration") { tmpDir =>
     new PsqlDbStorage(
@@ -48,7 +48,7 @@ object FlywaySupport {
       }
       .toList
       .sortBy { path =>
-        val isTest = path.getPath contains "test-classes"
+        val isTest = path.getPath.contains("test-classes")
         isTest && testMigrationHasPriority
       }
 

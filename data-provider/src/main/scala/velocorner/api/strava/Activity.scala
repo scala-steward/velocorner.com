@@ -1,6 +1,5 @@
 package velocorner.api.strava
 
-import ai.x.play.json.{CamelToSnakeNameEncoder, Jsonx, NameEncoder}
 import org.joda.time.DateTime
 import play.api.libs.json._
 import velocorner.model.DateTimePattern
@@ -82,13 +81,10 @@ import velocorner.model.strava.Athlete
 object Activity {
 
   implicit val dateTimeFormat: Format[DateTime] = DateTimePattern.createLongFormatter
-  // generates a PlayJson Format[T] for a case class T with any number of fields
-  implicit val encoder: NameEncoder = CamelToSnakeNameEncoder()
-  implicit val activityFormat: OFormat[Activity] = Jsonx.formatCaseClass[Activity]
-  implicit val listActivities: Reads[List[Activity]] = Reads.list(activityFormat)
+  implicit val activityFormat: OFormat[Activity] = Json.format[Activity]
+  implicit val listActivities: Reads[List[Activity]] = Reads.list(using activityFormat)
 }
 
-// max 22 fields are supported by the regular json marshaller, using ai.x.play extension
 case class Activity(
     id: Long,
     resource_state: Int,
@@ -120,5 +116,5 @@ case class Activity(
     pr_count: Option[Int]
 ) {
   // for some devices the local_start_date is not set
-  def getStartDateLocal(): DateTime = start_date_local.getOrElse(start_date)
+  def getStartDateLocal: DateTime = start_date_local.getOrElse(start_date)
 }

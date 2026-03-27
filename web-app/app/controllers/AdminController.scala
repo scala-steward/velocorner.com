@@ -23,7 +23,7 @@ class AdminController @Inject() (val connectivity: ConnectivitySettings, val cac
   // def mapped to /api/admin/status
   def status: Action[AnyContent] = AuthAsyncAction(parse.default) { implicit request =>
     val res = for {
-      _ <- OptionT(Future(loggedIn.filter(_.isAdmin())))
+      _ <- OptionT(Future(loggedIn.filter(_.isAdmin)))
       adminInfo <- OptionT.liftF(retrieveAdminInfo())
     } yield adminInfo
     res.map(info => Ok(Json.toJson(info))).getOrElse(Forbidden)

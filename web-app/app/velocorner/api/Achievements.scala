@@ -22,12 +22,11 @@ case class Achievements(
 ) {
 
   def to(unit: Units.Entry): Achievements = unit match {
-    case Units.Imperial => this.toImperial()
+    case Units.Imperial => this.toImperial
     case Units.Metric   => this
-    case other          => throw new IllegalArgumentException(s"unknown unit $other")
   }
 
-  private def toImperial() = Achievements(
+  private def toImperial = Achievements(
     maxAverageSpeed = maxAverageSpeed.map(_.convert(KilometersPerHour(_).toInternationalMilesPerHour)),
     maxDistance = maxDistance.map(_.convert(Kilometers(_).toInternationalMiles)),
     maxTimeInSec = maxTimeInSec,

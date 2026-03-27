@@ -3,19 +3,23 @@ package velocorner.spark.app
 import org.apache.spark.SparkContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.ml.feature.LabeledPoint
+import org.apache.spark.ml.linalg.SQLDataTypes.VectorType
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.ml.regression.LinearRegression
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
 import org.joda.time.DateTime
 import velocorner.spark.LocalSpark
 import velocorner.api.strava.Activity
 import velocorner.util.{JsonIo, Metrics}
 
-object PredictActivities extends App with LocalSpark[String] with Logging with Metrics {
+object PredictActivities extends LocalSpark[String] with Logging with Metrics {
 
   log.info("starting...")
 
-  runSpark()
+  def main(args: Array[String]): Unit = {
+    runSpark()
+  }
 
   override def sparkAppName: String = "Predict Activities"
 
@@ -31,11 +35,19 @@ object PredictActivities extends App with LocalSpark[String] with Logging with M
 
     // prepare training set
     val parsedData = data2015.map(_.labeledPoint)
-    val rdd = sc.makeRDD(parsedData).cache()
 
     val algorithm = new LinearRegression().setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8)
     val session = SparkSession.builder().getOrCreate()
-    val Array(trainingData, testData) = session.createDataFrame(rdd).randomSplit(Array(0.7, 0.3), 1234)
+    val trainingRows = parsedData.map(point => Row(point.label, point.features))
+    val schema = StructType(
+      Seq(
+        StructField("label", DoubleType, nullable = false),
+        StructField("features", VectorType, nullable = false)
+      )
+    )
+    val Array(trainingData, testData) = session
+      .createDataFrame(sc.parallelize(trainingRows), schema)
+      .randomSplit(Array(0.7, 0.3), 1234)
 
     val model = algorithm.fit(trainingData)
 
@@ -44,7 +56,7 @@ object PredictActivities extends App with LocalSpark[String] with Logging with M
 
     val predictions = model.transform(testData)
     predictions.show()
-    predictions.toString()
+    predictions.toString
   }
 
   implicit class FeatureExtractor(activity: Activity) {

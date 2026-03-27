@@ -1,8 +1,7 @@
 package controllers
 
 import org.apache.pekko.util.Timeout
-import org.mockito.Mockito.when
-import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.Mockito.{mock, when}
 import org.scalatestplus.play.PlaySpec
 import play.api.cache.SyncCacheApi
 import play.api.test.{FakeRequest, Helpers, StubControllerComponentsFactory}
@@ -11,22 +10,22 @@ import velocorner.{SecretConfig, ServiceProvider}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class WebControllerSpec extends PlaySpec with StubControllerComponentsFactory with MockitoSugar {
+class WebControllerSpec extends PlaySpec with StubControllerComponentsFactory {
 
   "controller" should {
 
     implicit val timeout: Timeout = 10 seconds
 
-    val assetsFinder = new AssetsFinder {
+    given AssetsFinder = new AssetsFinder {
       override def findAssetPath(basePath: String, rawPath: String): String = basePath
       override def assetsUrlPrefix: String = ""
       override def assetsBasePath: String = "public"
     }
 
-    val cacheApiMock = mock[SyncCacheApi]
-    val settingsMock = mock[ConnectivitySettings]
-    val refreshStrategyMock = mock[RefreshStrategy]
-    val secretConfigMock = mock[SecretConfig]
+    val cacheApiMock = mock(classOf[SyncCacheApi])
+    val settingsMock = mock(classOf[ConnectivitySettings])
+    val refreshStrategyMock = mock(classOf[RefreshStrategy])
+    val secretConfigMock = mock(classOf[SecretConfig])
 
     when(settingsMock.secretConfig).thenReturn(secretConfigMock)
     when(secretConfigMock.isServiceEnabled(ServiceProvider.Withings)).thenReturn(false)
@@ -37,7 +36,7 @@ class WebControllerSpec extends PlaySpec with StubControllerComponentsFactory wi
         cacheApiMock,
         settingsMock,
         refreshStrategyMock
-      )(assetsFinder)
+      )
       val result = controller.index.apply(FakeRequest())
       val content = Helpers.contentAsString(result)
       content must include("Welcome")

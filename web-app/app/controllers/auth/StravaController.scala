@@ -49,7 +49,7 @@ class StravaController @Inject() (val connectivity: ConnectivitySettings, val ca
   def login(): Action[AnyContent] = timed("LOGIN") {
     Action { implicit request =>
       logger.info(s"LOGIN started...")
-      loggedIn(request) match {
+      loggedIn(using request) match {
         case Some(_) =>
           // already logged in
           Redirect(controllers.routes.WebController.index)
@@ -79,7 +79,7 @@ class StravaController @Inject() (val connectivity: ConnectivitySettings, val ca
       val (code, _) = v
       for {
         accessTokenResponse <- authenticator.retrieveAccessToken(code)
-        oauthResult <- loggedIn(request) match {
+        oauthResult <- loggedIn(using request) match {
           case Some(account) => onOAuthLinkSucceeded(accessTokenResponse, account)
           case None          => onOAuthLoginSucceeded(accessTokenResponse)
         }
@@ -102,7 +102,7 @@ class StravaController @Inject() (val connectivity: ConnectivitySettings, val ca
       resp <- OptionT.liftF(authenticator.retrieveAccessToken(code))
       athlete <- OptionT.liftF(login(resp, none))
       jwt = JwtUser.toJwtUser(athlete)
-      token = jwt.toToken(connectivity.secretConfig.getJwtSecret)
+      token = jwt.toToken(using connectivity.secretConfig.getJwtSecret)
     } yield Ok(Json.obj("access_token" -> JsString(token)))).getOrElse(BadRequest)
   }
 
@@ -115,7 +115,7 @@ class StravaController @Inject() (val connectivity: ConnectivitySettings, val ca
 
   def logout: Action[AnyContent] = Action { implicit request =>
     logger.info("logout")
-    tokenAccessor.extract(request) foreach idContainer.remove
+    tokenAccessor.extract(request).foreach(idContainer.remove)
     val result = Redirect(controllers.routes.WebController.index)
     tokenAccessor.delete(result)
   }

@@ -29,12 +29,10 @@ object Club {
 
   val velocornerId = 122614
 
-  val writes: Writes[Club] = new Writes[Club] {
-    override def writes(o: Club): JsValue = {
-      val baseJs: JsObject = Json.writes[Club].writes(o).as[JsObject]
-      val typeJs: JsString = Writes.StringWrites.writes("Club")
-      JsObject(baseJs.fields :+ ("type" -> typeJs))
-    }
+  val writes: Writes[Club] = (o: Club) => {
+    val baseJs: JsObject = Json.writes[Club].writes(o).as[JsObject]
+    val typeJs: JsString = JsString("Club")
+    JsObject(baseJs.fields :+ ("type" -> typeJs))
   }
   implicit val clubFormat: Format[Club] = Format[Club](Json.reads[Club], writes)
 }

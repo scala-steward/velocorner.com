@@ -42,12 +42,10 @@ object Account {
 
   implicit val dateTimeFormat: Format[DateTime] = DateTimePattern.createLongFormatter
 
-  val writes: Writes[Account] = new Writes[Account] {
-    override def writes(o: Account): JsValue = {
-      val baseJs: JsObject = Json.writes[Account].writes(o).as[JsObject]
-      val typeJs: JsString = Writes.StringWrites.writes("Account")
-      JsObject(baseJs.fields :+ ("type" -> typeJs))
-    }
+  val writes: Writes[Account] = (o: Account) => {
+    val baseJs: JsObject = Json.writes[Account].writes(o).as[JsObject]
+    val typeJs: JsString = JsString("Account")
+    JsObject(baseJs.fields :+ ("type" -> typeJs))
   }
 
   implicit val accountFormat: Format[Account] = Format[Account](Json.reads[Account], writes)
@@ -85,8 +83,8 @@ case class Account(
     stravaAccess: Option[OAuth2Access]
 ) {
 
-  def isAdmin(): Boolean = role.contains(Role.Admin)
+  def isAdmin: Boolean = role.contains(Role.Admin)
 
   def units(): Units.Entry = unit.getOrElse(Units.Metric)
-  def isImperial(): Boolean = unit.contains(Units.Imperial)
+  def isImperial: Boolean = unit.contains(Units.Imperial)
 }

@@ -4,13 +4,15 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import velocorner.spark.LocalSpark
 
-object WordCount extends App with LocalSpark[Long] {
+object WordCount extends LocalSpark[Long] {
 
-  runSpark()
+  def main(args: Array[String]): Unit = {
+    runSpark()
+  }
 
   override def sparkAppName: String = "Word Count"
 
-  def spark(sc: SparkContext) = {
+  def spark(sc: SparkContext): Long = {
     val rdd: RDD[String] = sc.textFile("data-analytics/src/main/resources/data/kipling-if.txt")
     println(s"lines: ${rdd.count()}")
 

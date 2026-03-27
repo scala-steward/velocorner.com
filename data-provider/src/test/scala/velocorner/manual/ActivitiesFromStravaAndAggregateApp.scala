@@ -14,7 +14,10 @@ object ActivitiesFromStravaAndAggregateApp extends IOApp.Simple with AggregateAc
       for {
         storage <- IO.delay(Storage.create("or"))
         _ = storage.initialize()
-        activities <- IO.fromFuture(IO(StravaActivityFeed.listRecentAthleteActivities(feed)))
+        activities <- IO.fromFuture(IO {
+          given StravaActivityFeed = feed
+          StravaActivityFeed.listRecentAthleteActivities
+        })
         _ <- IO.println(s"retrieved ${activities.size} activities")
         progress <- IO.fromFuture(IO(storage.listAllActivities(432909, "Ride").map(DailyProgress.from)))
         _ <- IO.delay(printAllProgress(progress))

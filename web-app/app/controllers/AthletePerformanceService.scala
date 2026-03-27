@@ -33,7 +33,7 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
 
     for {
       recent <- storage.listRecentActivities(account.athleteId, maxRecentActivities)
-      sorted = recent.toList.sortBy(_.getStartDateLocal().getMillis).reverse
+      sorted = recent.toList.sortBy(_.getStartDateLocal.getMillis).reverse
       context = buildContext(sorted)
       _ = logger.info(s"performance context for $who: recentActivities=${sorted.size}, hasContext=${context.nonEmpty}")
       result <- context match {
@@ -98,7 +98,7 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
   private def buildContext(activities: List[Activity]): Option[EvaluationContext] = {
     val now = org.joda.time.DateTime.now()
     val twoWeeksAgo = now.minusWeeks(2)
-    val fromLastTwoWeeks = activities.filter(_.getStartDateLocal().isAfter(twoWeeksAgo)).take(5)
+    val fromLastTwoWeeks = activities.filter(_.getStartDateLocal.isAfter(twoWeeksAgo)).take(5)
     val selected = if (fromLastTwoWeeks.nonEmpty) fromLastTwoWeeks else activities.take(5)
     Option.when(selected.nonEmpty) {
       val basedOn =
@@ -106,7 +106,7 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
         else s"${selected.size} latest activities"
       val fingerprint = sha256(
         selected
-          .map(a => s"${a.id}:${a.getStartDateLocal().getMillis}:${a.distance}:${a.moving_time}:${a.total_elevation_gain}")
+          .map(a => s"${a.id}:${a.getStartDateLocal.getMillis}:${a.distance}:${a.moving_time}:${a.total_elevation_gain}")
           .mkString("|")
       )
       val prompt = buildPrompt(selected)
@@ -154,7 +154,7 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
 
   private def buildPrompt(activities: List[Activity]): String = {
     val lines = activities.zipWithIndex.map { case (a, ix) =>
-      val localDate = a.getStartDateLocal().toString("yyyy-MM-dd")
+      val localDate = a.getStartDateLocal.toString("yyyy-MM-dd")
       val avgSpeedKmh = a.average_speed.map(v => f"${v * 3.6}%.1f").getOrElse("n/a")
       val avgHr = a.average_heartrate.map(v => f"$v%.0f").getOrElse("n/a")
       val avgPower = a.average_watts.map(v => f"$v%.0f").getOrElse("n/a")

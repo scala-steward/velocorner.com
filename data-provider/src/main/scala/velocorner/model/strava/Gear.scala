@@ -8,12 +8,10 @@ object Gear {
   case object Bike extends Entry
   case object Shoe extends Entry
 
-  val writes = new Writes[Gear] {
-    override def writes(o: Gear): JsValue = {
-      val baseJs: JsObject = Json.writes[Gear].writes(o).as[JsObject]
-      val typeJs: JsString = Writes.StringWrites.writes("Gear")
-      JsObject(baseJs.fields :+ ("type" -> typeJs))
-    }
+  val writes: Writes[Gear] = (o: Gear) => {
+    val baseJs: JsObject = Json.writes[Gear].writes(o).as[JsObject]
+    val typeJs: JsString = JsString("Gear")
+    JsObject(baseJs.fields :+ ("type" -> typeJs))
   }
   implicit val gearFormat: Format[Gear] = Format[Gear](Json.reads[Gear], writes)
 }

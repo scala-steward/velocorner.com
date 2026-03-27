@@ -2,7 +2,7 @@ package velocorner.api
 
 import enumeratum.EnumEntry.LowerCamelcase
 import enumeratum.{Enum, EnumEntry}
-import play.api.libs.json.{Format, Json, Reads, Writes}
+import play.api.libs.json.{Format, JsError, JsSuccess, Json, Reads, Writes}
 import velocorner.model.brand.NameNormalizer._
 
 //noinspection TypeAnnotation
@@ -114,7 +114,23 @@ package object brand {
           "https://www.wigglestatic.com/images/ui/wiggle-logo/desktop-wiggle_master_rgb_logo.svg"
         )
 
-    implicit val marketplaceFormat: Format[Marketplace] = Format[Marketplace](Json.reads[Marketplace], Json.writes[Marketplace])
+    implicit val marketplaceFormat: Format[Marketplace] = Format[Marketplace](
+      Reads { json =>
+        (json \ "name").validate[String].flatMap { name =>
+          values.find(_.name == name) match {
+            case Some(marketplace) => JsSuccess(marketplace)
+            case None              => JsError(s"unknown marketplace $name")
+          }
+        }
+      },
+      Writes { marketplace =>
+        Json.obj(
+          "name" -> marketplace.name,
+          "url" -> marketplace.url,
+          "logoUrl" -> marketplace.logoUrl
+        )
+      }
+    )
 
     val values = findValues
   }
@@ -131,7 +147,7 @@ package object brand {
   object MarketplaceBrand {
     implicit val marketplaceBrandFormat: Format[MarketplaceBrand] = Format[MarketplaceBrand](Json.reads[MarketplaceBrand], Json.writes[MarketplaceBrand])
     implicit val listFormat: Format[List[MarketplaceBrand]] =
-      Format[List[MarketplaceBrand]](Reads.list(marketplaceBrandFormat), Writes.list(marketplaceBrandFormat))
+      Format[List[MarketplaceBrand]](Reads.list(using marketplaceBrandFormat), Writes.list(using marketplaceBrandFormat))
 
     // pairs brands listed on different marketplaces with slightly different names
     def normalize(mb: List[MarketplaceBrand]): List[MarketplaceBrand] = {

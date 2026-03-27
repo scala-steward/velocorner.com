@@ -21,6 +21,7 @@ import velocorner.model.strava.Gear
 import velocorner.util.JsonIo
 
 import java.time.ZoneId
+import scala.reflect.ClassTag
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,7 +53,7 @@ class PsqlDbStorage(dbUrl: String, dbUser: String, dbPassword: String, flywayLoc
     connectEC = connectEC
   )
 
-  def playJsonMeta[A: Reads: Writes: Manifest]: Meta[A] = Meta.Advanced
+  def playJsonMeta[A: {Reads, Writes, ClassTag}]: Meta[A] = Meta.Advanced
     .other[PGobject]("jsonb")
     .timap[A] { pgo =>
       JsonIo.read[A](pgo.getValue)
@@ -72,7 +73,7 @@ class PsqlDbStorage(dbUrl: String, dbUser: String, dbPassword: String, flywayLoc
     Meta[java.sql.Timestamp].timap(ts => new DateTime(ts.getTime))(dt => new java.sql.Timestamp(dt.getMillis))
 
   implicit class ConnectionIOOps[T](cio: ConnectionIO[T]) {
-    def transactToFuture: Future[T] = cio.transact(transactor).unsafeToFuture()(cats.effect.unsafe.implicits.global)
+    def transactToFuture: Future[T] = cio.transact(transactor).unsafeToFuture()(using cats.effect.unsafe.implicits.global)
   }
 
   // to access it from the migration
@@ -152,7 +153,6 @@ class PsqlDbStorage(dbUrl: String, dbUser: String, dbPassword: String, flywayLoc
     val orderClause = actionType match {
       case ActionType.Distance  => "(data->>'distance')::numeric desc"
       case ActionType.Elevation => "(data->>'total_elevation_gain')::numeric desc"
-      case unknown              => throw new IllegalArgumentException(s"unknown order clause $unknown")
     }
     val sql = fr"""select data from activity
          |where athlete_id = $athleteId and type = $activityType

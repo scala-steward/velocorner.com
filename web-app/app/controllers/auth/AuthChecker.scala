@@ -58,7 +58,7 @@ trait AuthChecker extends WebMetrics {
 
     override def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
       implicit val r: Request[A] = request
-      val maybeUserF = restoreUser.recover { case _ => None -> identity[Result] _ }
+      val maybeUserF = restoreUser.recover { case _ => None -> ((result: Result) => result) }
       maybeUserF.flatMap { case (maybeUser, cookieUpdater) =>
         val richReq = maybeUser.map(u => request.addAttr(OAuth2AttrKey, u)).getOrElse(request)
         val eventualResult = block(richReq)
@@ -74,7 +74,7 @@ trait AuthChecker extends WebMetrics {
 
   def AuthAction[B](p: BodyParser[B])(f: Request[B] => Result): Action[B] = new AuthActionBuilder(p).apply(f)
 
-  def loggedIn(implicit request: Request[_]): Option[Account] = request.attrs.get[Account](OAuth2AttrKey)
+  def loggedIn(using request: Request[?]): Option[Account] = request.attrs.get[Account](OAuth2AttrKey)
 
   // restore user from authorization bearer token or cookie
   private def restoreUser(implicit request: RequestHeader): Future[(Option[User], ResultUpdater)] = {
@@ -82,12 +82,12 @@ trait AuthChecker extends WebMetrics {
       token <- OptionT[Future, AuthenticityToken](Future.successful(tokenAccessor.extract(request)))
       userId <- OptionT(idContainer.get(token))
       _ <- OptionT.liftF(idContainer.prolongTimeout(token, sessionTimeoutInSeconds))
-    } yield (userId, tokenAccessor.put(token) _)
+    } yield (userId, tokenAccessor.put(token))
 
     def fromBearer(): OptionT[Future, (Long, ResultUpdater)] = OptionT(Future.successful(for {
       token <- request.headers.get("Authorization").map(_.trim.stripPrefix("Bearer "))
-      user <- Try(JwtUser.fromToken(token)(connectivity.secretConfig.getJwtSecret)).toOption
-    } yield (user.id, identity _)))
+      user <- Try(JwtUser.fromToken(token)(using connectivity.secretConfig.getJwtSecret)).toOption
+    } yield (user.id, (result: Result) => result)))
 
     val maybeUserIdT = fromBearer() orElse fromCookie()
     (for {
@@ -95,7 +95,7 @@ trait AuthChecker extends WebMetrics {
       user <- OptionT(resolveUser(userId))
     } yield (user, resultUpdater)).value.map {
       case Some((user, updater)) => (user.some, updater)
-      case _                     => Option.empty -> identity
+      case _                     => Option.empty -> ((result: Result) => result)
     }
   }
 }

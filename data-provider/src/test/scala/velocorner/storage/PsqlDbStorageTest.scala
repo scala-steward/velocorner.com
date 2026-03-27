@@ -12,6 +12,8 @@ import velocorner.model.ActionType
 import velocorner.model.strava.Gear
 import velocorner.util.{FlywaySupport, JsonIo}
 
+import scala.compiletime.uninitialized
+
 class PsqlDbStorageTest
     extends AnyFlatSpec
     with BeforeAndAfterAll
@@ -22,8 +24,8 @@ class PsqlDbStorageTest
     with FlywaySupport
     with LazyLogging {
 
-  @volatile var psqlEmbedded: EmbeddedPostgres = _
-  @volatile var psqlStorage: PsqlDbStorage = _
+  @volatile var psqlEmbedded: EmbeddedPostgres = uninitialized
+  @volatile var psqlStorage: PsqlDbStorage = uninitialized
 
   private val activityFixtures = JsonIo.readReadFromResource[List[Activity]]("/data/strava/last30activities.json")
 

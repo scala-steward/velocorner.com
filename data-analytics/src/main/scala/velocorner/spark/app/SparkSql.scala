@@ -4,13 +4,15 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import velocorner.spark.LocalSpark
 
-object SparkSql extends App with LocalSpark[String] {
+object SparkSql extends LocalSpark[String] {
 
-  runSpark()
+  def main(args: Array[String]): Unit = {
+    runSpark()
+  }
 
   override def sparkAppName = "SQL Activities"
 
-  override def spark(sc: SparkContext) = {
+  override def spark(sc: SparkContext): String = {
     val ss = SparkSession.builder().config(sc.getConf).getOrCreate()
     val sql = ss.sqlContext
 

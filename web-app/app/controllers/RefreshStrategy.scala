@@ -75,7 +75,8 @@ class RefreshStrategy @Inject() (connectivity: ConnectivitySettings) {
 
       case None => // it was never synchronized, do a full update
         log.info(s"retrieving all activities as it was never synched")
-        StravaActivityFeed.listAllAthleteActivities(feed)
+        given ActivityFeed = feed
+        StravaActivityFeed.listAllAthleteActivities
 
       case Some(lastUpdateInMillis) if now.getMillis - lastUpdateInMillis > stalePeriodInMillis =>
         log.info(s"retrieving latest activities for $athleteId")

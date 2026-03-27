@@ -526,7 +526,7 @@ GET     /api/products/markets                              controllers.ProductsC
 
 # DOC
 ### NoDocs ###
-GET     /swagger.json                                      controllers.Assets.at(path="/public", file="swagger.json")
+GET     /swagger.json                                      controllers.WebController.swaggerSpec
 ### NoDocs ###
 GET     /docs                                              controllers.Assets.at(path="/public", file="swagger-ui/index.html")
 

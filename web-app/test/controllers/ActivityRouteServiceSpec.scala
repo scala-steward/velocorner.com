@@ -2,10 +2,9 @@ package controllers
 
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => eqTo}
-import org.mockito.Mockito.{never, verify, when}
+import org.mockito.Mockito.{mock, never, verify, when}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.mockito.MockitoSugar
 import velocorner.api.{Account, ActivityRoute, ActivityRoutePoint, OAuth2Access, Units}
 import velocorner.api.strava.Activity
 import velocorner.model.strava.Athlete
@@ -14,7 +13,7 @@ import velocorner.storage.Storage
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-class ActivityRouteServiceSpec extends AnyWordSpec with Matchers with MockitoSugar {
+class ActivityRouteServiceSpec extends AnyWordSpec with Matchers {
 
   private def await[T](future: Future[T]): T = scala.concurrent.Await.result(future, 5.seconds)
 
@@ -62,9 +61,9 @@ class ActivityRouteServiceSpec extends AnyWordSpec with Matchers with MockitoSug
 
   "activity route service" should {
     "return cached route without calling Strava" in {
-      val connectivity = mock[ConnectivitySettings]
-      val strategy = mock[RefreshStrategy]
-      val storage = mock[Storage[Future]]
+      val connectivity = mock(classOf[ConnectivitySettings])
+      val strategy = mock(classOf[RefreshStrategy])
+      val storage = mock(classOf[Storage[Future]])
       val cached = ActivityRoute(
         activityId = 244993130L,
         source = "streams",
@@ -84,10 +83,10 @@ class ActivityRouteServiceSpec extends AnyWordSpec with Matchers with MockitoSug
     }
 
     "fetch activity streams route and store parsed cache data" in {
-      val connectivity = mock[ConnectivitySettings]
-      val strategy = mock[RefreshStrategy]
-      val storage = mock[Storage[Future]]
-      val feed = mock[velocorner.feed.StravaActivityFeed]
+      val connectivity = mock(classOf[ConnectivitySettings])
+      val strategy = mock(classOf[RefreshStrategy])
+      val storage = mock(classOf[Storage[Future]])
+      val feed = mock(classOf[velocorner.feed.StravaActivityFeed])
       val rawStreams =
         """{
           |  "latlng": { "type": "latlng", "data": [[47.1, 8.1], [47.2, 8.2]], "series_type": "distance", "original_size": 2, "resolution": "high" },
@@ -116,9 +115,9 @@ class ActivityRouteServiceSpec extends AnyWordSpec with Matchers with MockitoSug
     }
 
     "return none when activity belongs to another athlete" in {
-      val connectivity = mock[ConnectivitySettings]
-      val strategy = mock[RefreshStrategy]
-      val storage = mock[Storage[Future]]
+      val connectivity = mock(classOf[ConnectivitySettings])
+      val strategy = mock(classOf[RefreshStrategy])
+      val storage = mock(classOf[Storage[Future]])
       val foreignActivity = activity.copy(athlete = Athlete(1L, 1, Some("Other"), None, None, None, None, None, None))
 
       when(connectivity.getStorage).thenReturn(storage)

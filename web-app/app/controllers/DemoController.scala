@@ -27,7 +27,7 @@ class DemoController @Inject() (val connectivity: ConnectivitySettings, componen
   )
 
   private def noStore(result: play.api.mvc.Result) =
-    result.withHeaders(DemoNoStoreHeaders: _*)
+    result.withHeaders(DemoNoStoreHeaders*)
 
   // demo ytd data
   // route mapped to /api/demo/statistics/ytd/:action/:activity
@@ -63,20 +63,22 @@ class DemoController @Inject() (val connectivity: ConnectivitySettings, componen
 
   // word cloud titles and descriptions with occurrences
   // route mapped to /api/demo/wordcloud
-  def wordcloud(): Action[AnyContent] = Action { implicit request =>
-    val wcs = DemoActivityUtils
-      .generateTitles(200)
-      .map(_.trim.toLowerCase)
-      .groupBy(identity)
-      .view
-      .mapValues(_.size)
-      .map { case (k, v) => WordCloud(k, v) }
-      .toList
-      .filter(_.weight > 1)
-      .sortBy(_.weight)
-      .reverse
+  def wordcloud(): Action[AnyContent] = Action.async {
+    timedRequest[AnyContent](s"demo word cloud") { implicit request =>
+      val wcs = DemoActivityUtils
+        .generateTitles(200)
+        .map(_.trim.toLowerCase)
+        .groupBy(identity)
+        .view
+        .mapValues(_.size)
+        .map { case (k, v) => WordCloud(k, v) }
+        .toList
+        .filter(_.weight > 1)
+        .sortBy(_.weight)
+        .reverse
 
-    noStore(Ok(JsonIo.write(wcs)))
+      Future(noStore(Ok(JsonIo.write(wcs))))
+    }
   }
 
   // route mapped to /api/demo/statistics/histogram/:action/:activity
