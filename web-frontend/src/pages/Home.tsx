@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Card, Progress, Text, VStack, Image } from "@chakra-ui/react";
+import { Box, Card, Flex, Image, Progress, Text, VStack } from "@chakra-ui/react";
 import ApiClient from "@/service/ApiClient";
 import { useAuth } from "@/service/auth";
 import { toaster } from "@/components/ui/toaster";
@@ -202,17 +202,6 @@ const Home = () => {
           </Card.Body>
         </Card.Root>
 
-        {loading && (
-          <Box textAlign="center" py={10}>
-            <Progress.Root size="lg" value={null}>
-              <Progress.Track>
-                <Progress.Range />
-              </Progress.Track>
-            </Progress.Root>
-            <Text mt={4}>Loading...</Text>
-          </Box>
-        )}
-
         {!isAuthenticated && (
           <HomeDemoDashboard
             wordCloud={wordCloud}
@@ -222,7 +211,26 @@ const Home = () => {
 
         {isAuthenticated && (
           <>
-            <Image alignSelf="flex-end" width="169px" height="31px" src="/images/powered-by-strava1.png" alt="Powered by Strava" />
+            <Flex direction={{ base: "column", md: "row" }} align="center" gap={4}>
+              {loading && (
+                <Box w="full">
+                  <Progress.Root size="lg" value={null}>
+                    <Progress.Label>Loading...</Progress.Label>
+                    <Progress.Track>
+                      <Progress.Range />
+                    </Progress.Track>
+                  </Progress.Root>
+                </Box>
+              )}
+              <Image
+                ml={{ md: "auto" }}
+                alignSelf={{ base: "flex-end", md: "auto" }}
+                width="169px"
+                height="31px"
+                src="/images/powered-by-strava1.png"
+                alt="Powered by Strava"
+              />
+            </Flex>
 
             <ActivityTypeSelector
               activityTypes={activityTypes}
