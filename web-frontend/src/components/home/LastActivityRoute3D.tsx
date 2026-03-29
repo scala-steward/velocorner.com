@@ -591,7 +591,7 @@ const TerrainScene = ({
                 </Heading>
               </VStack>
 
-              <Grid templateColumns="repeat(3, minmax(0, 1fr))" gap={{ base: 2.5, md: 2 }}>
+              <Grid templateColumns="repeat(3, minmax(0, 1fr))" gap={{ base: 2.5, md: 2 }} hideBelow='md'>
                 <Box borderRadius="16px" p={{ base: 2.5, md: 2.25 }} bg="rgba(18, 38, 63, 0.04)">
                   <HStack mx='0.5rem' mb={1} color="slate.500">
                     <LuRoute />
@@ -627,7 +627,7 @@ const TerrainScene = ({
 
         {elevationSamples.length > 1 && <ElevationProfile samples={elevationSamples} units={units} />}
 
-        <Box mt="auto">
+        <Box mt="auto" hideBelow='md'>
           {elevationSummary && (
             <Box borderRadius="18px" p={{ base: 3, md: 2.5 }} bg="rgba(18, 38, 63, 0.04)" border="1px solid rgba(18, 38, 63, 0.06)">
               <Text fontSize="xs" textAlign='center' color="slate.500" mb={1.25}>Terrain span</Text>
@@ -826,7 +826,7 @@ const LastActivityRoute3D = ({ units, selectedActivityType }: LastActivityRoute3
                     </VStack>
                   </Box>
 
-                  <Grid templateColumns={{ base: "1fr", sm: "repeat(2, minmax(0, 1fr))" }} gap={2.5}>
+                  <Grid templateColumns={{ base: "1fr", sm: "repeat(2, minmax(0, 1fr))" }} gap={2.5} hideBelow='md'>
                     {climbingMetrics.map((metric) => (
                       <Box key={metric.label} borderRadius="18px" p={3} bg="rgba(18, 38, 63, 0.04)">
                         <Text fontSize="xs" color="slate.500" mb={1}>{metric.label}</Text>
@@ -845,7 +845,8 @@ const LastActivityRoute3D = ({ units, selectedActivityType }: LastActivityRoute3
             </VStack>
 
             {climbingInsights?.rolling4Weeks ? (
-              <HStack justify="space-between" gap={4} flexWrap="wrap" borderRadius="18px" p={3} bg="rgba(255,255,255,0.7)" border="1px solid rgba(18, 38, 63, 0.06)" mt="auto">
+              <HStack hideBelow='md' justify="space-between" gap={4} flexWrap="wrap" borderRadius="18px" p={3} bg="rgba(255,255,255,0.7)" 
+                border="1px solid rgba(18, 38, 63, 0.06)" mt="auto">
                 <Box>
                   <Text fontSize="xs" color="slate.500">Rolling block</Text>
                   <Text fontSize="sm" fontWeight="semibold" color="slate.800">

@@ -234,6 +234,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
             </HStack>
             {facts.length > 0 && (
               <Grid
+                hideBelow='md' 
                 templateColumns={{ base: "1fr", sm: `repeat(${Math.min(facts.length, 3)}, minmax(0, 1fr))` }}
                 gap={2}
                 flex="999 1 420px"
@@ -328,7 +329,9 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
                   ) : null}
 
                   {strengths.length > 0 ? (
-                    <Box p={3} borderRadius="2xl" bg="rgba(255,255,255,0.9)" border="1px solid" borderColor="rgba(15, 23, 42, 0.07)">
+                    <Box 
+                      hideBelow='md' 
+                      p={3} borderRadius="2xl" bg="rgba(255,255,255,0.9)" border="1px solid" borderColor="rgba(15, 23, 42, 0.07)">
                       <VStack align="stretch" gap={2}>
                         <HStack gap={2} color="slate.600">
                           <LuCircleCheckBig />
@@ -349,6 +352,7 @@ const PerformanceSummaryWidget = ({ isAuthenticated }: PerformanceSummaryWidgetP
 
                   {recommendations.length > 0 ? (
                     <Box
+                      hideBelow='md'
                       p={3}
                       borderRadius="2xl"
                       bg="linear-gradient(180deg, rgba(236, 253, 245, 0.9), rgba(240, 253, 250, 0.72))"
