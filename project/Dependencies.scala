@@ -7,9 +7,9 @@ object Dependencies {
   val catsEffectVersion = "3.7.0"
   val mouseVersion = "1.4.0"
   val http4s = "0.23.33"
-  val tapirVersion = "1.13.14"
+  val tapirVersion = "1.13.15"
   val playWsVersion = "3.0.10" // standalone version
-  val pekkoVersion = "1.4.0"
+  val pekkoVersion = "1.5.0"
   val playJsonVersion = "3.0.6"
   val shapelessVersion = "2.3.12"
   val logbackVersion = "1.5.32"
