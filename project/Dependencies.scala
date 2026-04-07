@@ -15,7 +15,7 @@ object Dependencies {
   val logbackVersion = "1.5.32"
   val lokiLogbackVersion = "2.0.3"
   val doobieVersion = "1.0.0-RC12"
-  val jwtVersion = "11.0.3"
+  val jwtVersion = "11.0.4"
   val squantsVersion = "1.8.3"
   val sparkVersion = "4.1.1"
   val circeVersion = "0.14.15"
