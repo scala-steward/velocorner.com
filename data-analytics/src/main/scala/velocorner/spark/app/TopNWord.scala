@@ -8,9 +8,8 @@ object TopNWord extends LocalSpark[Seq[(String, Int)]] {
 
   val n = 20
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit =
     runSpark()
-  }
 
   override def sparkAppName: String = s"Top $n Words"
 

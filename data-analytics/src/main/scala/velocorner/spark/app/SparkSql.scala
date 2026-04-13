@@ -6,9 +6,8 @@ import velocorner.spark.LocalSpark
 
 object SparkSql extends LocalSpark[String] {
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit =
     runSpark()
-  }
 
   override def sparkAppName = "SQL Activities"
 

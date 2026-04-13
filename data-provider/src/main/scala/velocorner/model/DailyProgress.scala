@@ -10,12 +10,12 @@ object DailyProgress {
     val progress = new Progress(
       1,
       1,
-        activity.distance / 1000,
-        activity.distance / 1000,
-        activity.moving_time,
-        activity.average_speed.getOrElse(0f).toDouble,
-        activity.total_elevation_gain,
-        activity.total_elevation_gain
+      activity.distance / 1000,
+      activity.distance / 1000,
+      activity.moving_time,
+      activity.average_speed.getOrElse(0f).toDouble,
+      activity.total_elevation_gain,
+      activity.total_elevation_gain
     )
     DailyProgress(activity.getStartDateLocal.toLocalDate, progress)
   }

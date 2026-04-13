@@ -45,13 +45,12 @@ object ClimbingInsights {
     ).to(unit)
   }
 
-  private def percentDelta(current: Double, baseline: Double): Int = {
+  private def percentDelta(current: Double, baseline: Double): Int =
     if (baseline == 0d) {
       if (current > 0d) 100 else 0
     } else {
       ((current - baseline) / baseline * 100d).round.toInt
     }
-  }
 
   private def weekStart(day: LocalDate): LocalDate = day.minusDays(day.getDayOfWeek - 1)
 }
@@ -81,12 +80,14 @@ case class ClimbingWindow(
 
   def to(unit: Units.Entry): ClimbingWindow = unit match {
     case Units.Imperial =>
-      ClimbingWindow.fromTotals(
-        rides = rides,
-        distance = Kilometers(distance).toInternationalMiles,
-        elevation = Meters(elevation).toFeet,
-        movingTime = movingTime
-      ).copy(climbinessScore = climbinessScore)
+      ClimbingWindow
+        .fromTotals(
+          rides = rides,
+          distance = Kilometers(distance).toInternationalMiles,
+          elevation = Meters(elevation).toFeet,
+          movingTime = movingTime
+        )
+        .copy(climbinessScore = climbinessScore)
     case Units.Metric => this
   }
 }

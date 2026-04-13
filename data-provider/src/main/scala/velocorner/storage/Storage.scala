@@ -2,7 +2,7 @@ package velocorner.storage
 
 import com.typesafe.scalalogging.LazyLogging
 import velocorner.SecretConfig
-import velocorner.api.{Account, Achievement, AthletePerformanceAnalysis, ActivityRoute}
+import velocorner.api.{Account, Achievement, ActivityRoute, AthletePerformanceAnalysis}
 import velocorner.model._
 import velocorner.model.strava.Gear
 

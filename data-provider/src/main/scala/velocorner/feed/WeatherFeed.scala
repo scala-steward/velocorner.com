@@ -16,10 +16,9 @@ class WeatherLocationFeed(override val config: SecretConfig) extends HttpFeed wi
 
   lazy val baseUrl = config.getWeatherUrl
 
-  override def countryLocation(ip: String): Future[String] = {
+  override def countryLocation(ip: String): Future[String] =
     ws(_.url(s"$baseUrl/location/ip?ip=$ip").get())
       .map(_.body)
       .map(JsonIo.read[Location])
       .map(_.country)
-  }
 }
