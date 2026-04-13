@@ -100,15 +100,13 @@ object RouteGeometrySupport {
       .getOrElse(Nil)
 
   private def extractLatLngData(payload: JsValue): List[(Double, Double)] =
-    extractStreamData(payload, "latlng")
-      .collect {
-        case JsArray(values) if values.size >= 2 =>
-          for {
-            lat <- values.headOption.flatMap(_.asOpt[Double])
-            lon <- values.lift(1).flatMap(_.asOpt[Double])
-          } yield (lat, lon)
-      }
-      .flatten
+    extractStreamData(payload, "latlng").collect {
+      case JsArray(values) if values.size >= 2 =>
+        for {
+          lat <- values.headOption.flatMap(_.asOpt[Double])
+          lon <- values.lift(1).flatMap(_.asOpt[Double])
+        } yield (lat, lon)
+    }.flatten
 
   private def extractDoubleData(payload: JsValue, key: String): List[Double] =
     extractStreamData(payload, key).flatMap(_.asOpt[Double])
@@ -132,7 +130,8 @@ object RouteGeometrySupport {
     }
 
   private def findStreamInArray(obj: JsObject, key: String): Option[JsObject] =
-    obj.value.get("streams")
+    obj.value
+      .get("streams")
       .collect { case JsArray(values) => values.toList }
       .flatMap(findStreamInValues(_, key))
 

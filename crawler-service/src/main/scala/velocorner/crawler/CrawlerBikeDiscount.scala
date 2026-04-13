@@ -42,7 +42,7 @@ object CrawlerBikeDiscount {
 
   def parseProducts(content: String, limit: Int): List[ProductDetails] =
     decode[List[BrowserProduct]](content) match {
-      case Left(_) => Nil
+      case Left(_)         => Nil
       case Right(products) =>
         products
           .flatMap { p =>

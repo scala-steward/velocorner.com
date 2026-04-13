@@ -17,9 +17,8 @@ object PredictActivities extends LocalSpark[String] with Logging with Metrics {
 
   log.info("starting...")
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]): Unit =
     runSpark()
-  }
 
   override def sparkAppName: String = "Predict Activities"
 

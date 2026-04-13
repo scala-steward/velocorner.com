@@ -15,7 +15,7 @@ import org.flywaydb.core.Flyway
 import org.joda.time.DateTime
 import org.postgresql.util.PGobject
 import play.api.libs.json.{Reads, Writes}
-import velocorner.api.{Account, Achievement, AthletePerformanceAnalysis, ActivityRoute}
+import velocorner.api.{Account, Achievement, ActivityRoute, AthletePerformanceAnalysis}
 import velocorner.api.strava.Activity
 import velocorner.model.strava.Gear
 import velocorner.util.JsonIo
@@ -319,8 +319,7 @@ class PsqlDbStorage(dbUrl: String, dbUser: String, dbPassword: String, flywayLoc
            |where athlete_id = $athleteId
            |order by created_at desc
            |limit 1
-           |"""
-        .stripMargin
+           |""".stripMargin
         .query[(Long, String, String, String, DateTime)]
         .map { case (id, fingerprint, basedOn, summary, createdAt) =>
           AthletePerformanceAnalysis(id, fingerprint, basedOn, summary, createdAt)
@@ -334,8 +333,7 @@ class PsqlDbStorage(dbUrl: String, dbUser: String, dbPassword: String, flywayLoc
            |where athlete_id = $athleteId and fingerprint = $fingerprint
            |order by created_at desc
            |limit 1
-           |"""
-        .stripMargin
+           |""".stripMargin
         .query[(Long, String, String, String, DateTime)]
         .map { case (id, fp, basedOn, summary, createdAt) =>
           AthletePerformanceAnalysis(id, fp, basedOn, summary, createdAt)

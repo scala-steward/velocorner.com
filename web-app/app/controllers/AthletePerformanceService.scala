@@ -205,7 +205,7 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
        |""".stripMargin
   }
 
-  private def generateSummary(prompt: String): Future[Option[String]] = {
+  private def generateSummary(prompt: String): Future[Option[String]] =
     connectivity.secretConfig.getAiChatProvider match {
       case "gemini" | "google" =>
         generateGeminiSummary(prompt)
@@ -217,7 +217,6 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
         logger.warn(s"Unknown AI chat provider '$provider', falling back to peregin")
         generatePereginSummary(prompt)
     }
-  }
 
   private def generatePereginSummary(prompt: String): Future[Option[String]] = {
     val url = connectivity.secretConfig.getAiChatUrl
@@ -295,7 +294,7 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
     executeSummaryRequest(request, "OpenRouter API")
   }
 
-  private def executeSummaryRequest(request: HttpRequest, endpointLabel: String): Future[Option[String]] = {
+  private def executeSummaryRequest(request: HttpRequest, endpointLabel: String): Future[Option[String]] =
     httpClient
       .sendAsync(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
       .asScala
@@ -304,7 +303,11 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
           val text = extractText(response.body())
           text.filter(_.nonEmpty)
         } else {
-          val headers = response.headers().map().asScala.toSeq
+          val headers = response
+            .headers()
+            .map()
+            .asScala
+            .toSeq
             .sortBy(_._1)
             .map { case (name, values) => s"$name=${values.asScala.mkString("[", ", ", "]")}" }
             .mkString(", ")
@@ -314,16 +317,15 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
           None
         }
       }
-      .recover {
-        case NonFatal(ex) =>
-          logger.warn(s"$endpointLabel request failed", ex)
-          None
+      .recover { case NonFatal(ex) =>
+        logger.warn(s"$endpointLabel request failed", ex)
+        None
       }
-  }
 
   private def extractText(rawBody: String): Option[String] = {
     def fromJson(js: JsValue): Option[String] =
-      (js \ "candidates").asOpt[JsArray]
+      (js \ "candidates")
+        .asOpt[JsArray]
         .flatMap(_.value.headOption)
         .flatMap(candidate => (candidate \ "content" \ "parts").asOpt[JsArray])
         .flatMap(_.value.headOption)
@@ -333,12 +335,14 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
         .orElse((js \ "content").asOpt[String])
         .orElse((js \ "message").asOpt[String])
         .orElse(
-          (js \ "choices").asOpt[JsArray]
+          (js \ "choices")
+            .asOpt[JsArray]
             .flatMap(_.value.headOption)
             .flatMap(choice => (choice \ "message" \ "content").asOpt[String])
         )
         .orElse(
-          (js \ "choices").asOpt[JsArray]
+          (js \ "choices")
+            .asOpt[JsArray]
             .flatMap(_.value.headOption)
             .flatMap(choice => (choice \ "text").asOpt[String])
         )
@@ -348,7 +352,7 @@ class AthletePerformanceService @Inject() (connectivity: ConnectivitySettings)(i
           case JsArray(values) =>
             values.toList.flatMap(fromJson).headOption
           case JsString(value) => Option(value)
-          case _ =>
+          case _               =>
             None
         })
 

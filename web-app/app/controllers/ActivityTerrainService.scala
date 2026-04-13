@@ -36,13 +36,13 @@ class ActivityTerrainService @Inject() (
 
   private case class GridSpec(rows: Int, cols: Int)
 
-  def terrainFor(account: Account, activityId: Long): Future[Option[ActivityTerrain]] = {
+  def terrainFor(account: Account, activityId: Long): Future[Option[ActivityTerrain]] =
     activityRouteService.routeFor(account, activityId).flatMap {
       case Some(route) if route.points.lengthCompare(1) > 0 =>
         val cacheKey = terrainCacheKey(account.athleteId, activityId, route)
         cache.get[ActivityTerrain](cacheKey) match {
           case some @ Some(_) => Future.successful(some)
-          case None =>
+          case None           =>
             val bounds = expandBounds(route.points)
             val gridSpec = adaptiveGridSpec(route, bounds)
             fetchDem(activityId, bounds, gridSpec)
@@ -58,7 +58,6 @@ class ActivityTerrainService @Inject() (
 
       case _ => Future.successful(None)
     }
-  }
 
   private def terrainCacheKey(athleteId: Long, activityId: Long, route: ActivityRoute): String = {
     val fingerprint = sha256(
@@ -163,7 +162,7 @@ class ActivityTerrainService @Inject() (
       }
   }
 
-  private def parseElevationResponse(json: JsValue): List[Option[Double]] = {
+  private def parseElevationResponse(json: JsValue): List[Option[Double]] =
     (json \ "elevation").toOption match {
       case Some(JsArray(values)) =>
         values.toList.map {
@@ -173,7 +172,6 @@ class ActivityTerrainService @Inject() (
       case Some(JsNumber(value)) => List(Some(value.toDouble))
       case _                     => throw new IllegalStateException("DEM response does not contain elevation values")
     }
-  }
 
   private def gridSamples(bounds: TerrainBounds, gridSpec: GridSpec): List[(Double, Double)] = {
     val latStep = if (gridSpec.rows <= 1) 0d else (bounds.maxLat - bounds.minLat) / (gridSpec.rows - 1)
@@ -195,44 +193,40 @@ class ActivityTerrainService @Inject() (
       TerrainPoint(lat = lat, lon = lon, ele = interpolateElevation(lat, lon, elevatedPoints))
     }
 
-        ActivityTerrain(
-          activityId = activityId,
-          source = "route-interpolated",
-          rows = gridSpec.rows,
-          cols = gridSpec.cols,
-          bounds = bounds,
-          points = points
-        )
+    ActivityTerrain(
+      activityId = activityId,
+      source = "route-interpolated",
+      rows = gridSpec.rows,
+      cols = gridSpec.cols,
+      bounds = bounds,
+      points = points
+    )
   }
 
-  private def routeDistanceMeters(route: ActivityRoute): Double = {
+  private def routeDistanceMeters(route: ActivityRoute): Double =
     route.points
       .sliding(2)
-      .collect {
-        case List(start, end) =>
-          val lat1 = math.toRadians(start.lat)
-          val lat2 = math.toRadians(end.lat)
-          val deltaLat = lat2 - lat1
-          val deltaLon = math.toRadians(end.lon - start.lon)
-          val a = math.sin(deltaLat / 2) * math.sin(deltaLat / 2) +
-            math.cos(lat1) * math.cos(lat2) * math.sin(deltaLon / 2) * math.sin(deltaLon / 2)
-          2 * 6371000d * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+      .collect { case List(start, end) =>
+        val lat1 = math.toRadians(start.lat)
+        val lat2 = math.toRadians(end.lat)
+        val deltaLat = lat2 - lat1
+        val deltaLon = math.toRadians(end.lon - start.lon)
+        val a = math.sin(deltaLat / 2) * math.sin(deltaLat / 2) +
+          math.cos(lat1) * math.cos(lat2) * math.sin(deltaLon / 2) * math.sin(deltaLon / 2)
+        2 * 6371000d * math.atan2(math.sqrt(a), math.sqrt(1 - a))
       }
       .sum
-  }
 
-  private def routeElevationGain(route: ActivityRoute): Double = {
+  private def routeElevationGain(route: ActivityRoute): Double =
     route.points
       .sliding(2)
-      .collect {
-        case List(start, end) =>
-          (for {
-            startElevation <- start.ele
-            endElevation <- end.ele
-          } yield math.max(endElevation - startElevation, 0d)).getOrElse(0d)
+      .collect { case List(start, end) =>
+        (for {
+          startElevation <- start.ele
+          endElevation <- end.ele
+        } yield math.max(endElevation - startElevation, 0d)).getOrElse(0d)
       }
       .sum
-  }
 
   private def interpolateElevation(lat: Double, lon: Double, points: List[ActivityRoutePoint]): Option[Double] = {
     if (points.isEmpty) return None
